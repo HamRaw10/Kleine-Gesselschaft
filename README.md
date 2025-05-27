@@ -18,6 +18,7 @@ El juego se va a llamar “kleine Gesellschaft” y el mismo va a consistir en u
 
 Para compilar el proyecto en Android Studio, nos dirigiremos a la ventana que dice "gradle" (El de este icono ![img_1.png](img_1.png)) 
 Y ahora vamos a seleccionar los siguientes pasos: lwjgl3 -> Tasks -> other -> run (En el ultimo "run" se recomienda darle con doble click)
+
 ![img.png](img.png)
 
 Abrir el proyecto con el boton "open" en la pantalla principal de android studio
