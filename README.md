@@ -22,6 +22,13 @@ Nuestro principal objetivo es que Kleine Gesellschaft sea jugable en android con
 * Android 10.0+
 * Generar tambien un ejecutable para windows
 
+## Enlace a la Wiki del Proyecto
+
+👉 [Ir a la Wiki del Proyecto](https://github.com/HamRaw10/Kleine-Gesselschaft/wiki)
+
+Aquí se encuentra la propuesta detallada del juego, incluye el alcance, descripcion de la propuestas, personajes, elementos etc.
+
+
 ## Como compilar y ejecutar
 
 ### Como instalar los archivos
