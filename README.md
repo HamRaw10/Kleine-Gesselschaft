@@ -50,4 +50,4 @@ Y ahora vamos a seleccionar los siguientes pasos: lwjgl3 -> Tasks -> other -> ru
 
 ## Estado Actual Del Proyecto
 * Creamos el repositorio con los archivos del videojuego
-* Integramos las clases para hacer un personaje que se mueva
+* Se instalo y inicializo libgdx con gdx-liftoff y en android studio.
