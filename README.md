@@ -55,6 +55,10 @@ Y ahora vamos a seleccionar los siguientes pasos: lwjgl3 -> Tasks -> other -> ru
 
 ![img.png](img.png)
 
+### Nota:
+
+Para compilar para Android, se deberá configurar un dispositivo virtual o físico con Android 10.0+ y usar los módulos específicos del proyecto (no incluidos aún en esta fase inicial).
+
 ## Estado Actual Del Proyecto
 * Creamos el repositorio con los archivos del videojuego
 * Se instalo y inicializo libgdx con gdx-liftoff y en android studio.
