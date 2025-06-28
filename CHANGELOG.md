@@ -12,7 +12,7 @@ Este archivo documenta los cambios importantes realizados en el proyecto a lo la
 - Configuración inicial de la Wiki del proyecto con imágenes ilustrativas.
 
 ### Changed
-- No se han realizado cambios.
+- Se agrego un circulo que proximamente representara un personaje que se puede mover con teclas y con clicks en pantalla.
 
 ### Fixed
 - No se ha arreglado nada.
