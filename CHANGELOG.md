@@ -20,3 +20,27 @@ clickear en algun lugar de la pantalla, ese ciruclo se va a dirigir gradualmente
 ### Fixed
 - No se ha arreglado nada.
 
+## [1.1.0] - 2025-07-06
+
+### Added
+- Incorporación de múltiples **assets** para animaciones de personajes.
+- Implementación de **animaciones para el personaje principal**, con desplazamientos en las siguientes direcciones:
+  - Arriba
+  - Abajo
+  - Derecha
+  - Izquierda
+  según la posición del **mouse**.
+- Creación de nuevos **paquetes** para mejorar la estructura del proyecto:
+  - `controles`
+  - `entidades`
+  - `pantalla`
+  - `utilidades`
+- Adición de **clases y métodos** específicos en cada paquete para manejar la animación y lógica del personaje controlado por el usuario.
+
+### Changed
+- Mejora significativa de la **estructura de Programación Orientada a Objetos** implementada anteriormente.
+- Se reorganizó el código para distribuir responsabilidades entre distintas clases y paquetes, facilitando el mantenimiento y escalabilidad del proyecto.
+- Se reemplazó el sistema anterior de control de personaje con formas geométricas por un personaje animado completo.
+
+### Fixed
+- No se ha corregido ningún error en esta versión.
