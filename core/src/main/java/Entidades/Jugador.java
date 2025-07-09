@@ -8,6 +8,7 @@ import Utilidades.utiles;
 
 public class Jugador extends Personaje {
 
+    public boolean estaEnMovimiento = false;
     private Animation<TextureRegion> animacionIdle;
     private Animation<TextureRegion> animacionAdelante;
     private Animation<TextureRegion> animacionAtras;
@@ -98,6 +99,7 @@ public class Jugador extends Personaje {
     }
 
     private boolean estaEnMovimiento() {
+        estaEnMovimiento = true;
         return Math.abs(velocidadX) > 0.1f || Math.abs(velocidadY) > 0.1f;
     }
 }
