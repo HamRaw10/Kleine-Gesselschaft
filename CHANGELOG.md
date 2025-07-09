@@ -44,3 +44,18 @@ clickear en algun lugar de la pantalla, ese ciruclo se va a dirigir gradualmente
 
 ### Fixed
 - No se ha corregido ningún error en esta versión.
+
+## [1.2.0] - 2025-07-06
+
+### Added
+- Implementación de **animaciones para el personaje principal**, con el cual el personaje se desplaze mas rapido y el usuario también, ademas de que se ubique
+de mejor manera.
+- Creación de un nuevo **paquete** para mejorar incorporar objetos dentro del juego:
+    - `objetos`
+- Adición de **clases y métodos** específicos en cada paquete para manejar la localización y transporte del personaje controlado por el usuario.
+
+### Changed
+- Se agrego un mapa para que el personaje pueda localizarse mejor y transportarse mas rapido
+
+### Fixed 
+- No se ha corregido ningún error en esta versión.
