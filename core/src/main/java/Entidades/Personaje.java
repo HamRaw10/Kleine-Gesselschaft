@@ -35,7 +35,6 @@ public abstract class Personaje {
         personajeX = MathUtils.clamp(personajeX, minX, maxX);//
         personajeY = MathUtils.clamp(personajeY, minY, maxY);//
     }
-
     public void actualizar(float delta, float targetX, float targetY) {
 
     }

@@ -11,10 +11,20 @@ public class Mapa extends Objeto {
     private final Rectangle bounds;
     private float tiempoExpandido;
     private final float TIEMPO_TRANSICION = 0.3f;
+    private final Texture botonCerrar;
+    private final Rectangle boundsBotonCerrar;
+    private final float TAMANO_BOTON = 50f;
+    private boolean bloqueoInput;
+
+    public boolean isInputBloqueado() {
+        return bloqueoInput;
+    }
     public Mapa() {
-        super("mapa.png", Gdx.graphics.getWidth() - 110, 10, 0.5f);
+        super("mapa.png", Gdx.graphics.getWidth() - 120, 70, 0.2f);
         this.mapaCompleto = new Texture("MapaGrande.jpg");
+        this.botonCerrar = new Texture("botonCerrar.png"); // Necesitarás esta textura
         this.bounds = new Rectangle((int) getMapaX(), (int) getMapaY(), (int) getWidth(), (int) getHeight());
+        this.boundsBotonCerrar = new Rectangle();
         this.expandido = false;
     }
 
@@ -22,14 +32,47 @@ public class Mapa extends Objeto {
     public void actualizar(float delta, float targetX, float targetY) {
         bounds.setRect(getMapaX(), getMapaY(), getWidth(), getHeight());
 
+
+        // Solo procesar inputs si no están bloqueados
+        if (!bloqueoInput) {
+            // Procesar clic en el mapa pequeño solo si NO está expandido
+            if (!expandido && Gdx.input.justTouched() &&
+                bounds.contains(targetX, targetY)) {
+                toggleExpandido();
+            }
+
+            // Procesar botón de cerrar solo cuando está expandido
+            if (expandido) {
+                float botonX = Gdx.graphics.getWidth() - TAMANO_BOTON - 20;
+                float botonY = 20;
+                boundsBotonCerrar.setRect(botonX, botonY, TAMANO_BOTON, TAMANO_BOTON);
+
+                if (Gdx.input.justTouched() && boundsBotonCerrar.contains(targetX, targetY)) {
+                    toggleExpandido();
+                    bloqueoInput = true; // Bloquear inputs temporalmente
+                }
+            }
+        }
+
+        // Restaurar inputs cuando la animación de cierre esté completa
+        if (bloqueoInput && !expandido && tiempoExpandido <= 0) {
+            bloqueoInput = false;
+        }
+
         // Control de entrada (clic o tecla M)
         if ((Gdx.input.justTouched() && bounds.contains(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY()))){
+            toggleExpandido();
+        }
+
+        if (!expandido && Gdx.input.justTouched() &&
+            bounds.contains(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY())) {
             toggleExpandido();
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.M)) {
             toggleExpandido();
         }
+
 
         // Actualizar tiempo de transición
         if (expandido && tiempoExpandido < TIEMPO_TRANSICION) {
@@ -53,6 +96,14 @@ public class Mapa extends Objeto {
                 0, 0,
                 Gdx.graphics.getWidth(),
                 Gdx.graphics.getHeight());
+
+            // Dibujar botón de cerrar (con la misma transición)
+            if (expandido || tiempoExpandido > 0) {
+                batch.setColor(1, 1, 1, progreso);
+                batch.draw(botonCerrar,
+                    boundsBotonCerrar.x, boundsBotonCerrar.y,
+                    boundsBotonCerrar.width, boundsBotonCerrar.height);
+            }
 
             // Restaurar color
             batch.setColor(1, 1, 1, 1);

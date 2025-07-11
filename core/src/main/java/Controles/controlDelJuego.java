@@ -19,26 +19,31 @@ public class controlDelJuego {
     }
 
     public void actualizar(float delta){
-        float targetX = utiles.getMouseX();
-        float targetY = utiles.getMouseY();
         float mouseX = Gdx.input.getX();
         float mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
-
-        jugador.actualizar(delta, targetX, targetY);
 
 
         // Actualizar el mapa (siempre)
         mapa.actualizar(delta, mouseX, mouseY);
 
-        // Solo actualizar jugador si el mapa no está expandido
-        if (!mapa.isExpandido()) {
-            jugador.actualizar(delta, mouseX, mouseY);
+        if (!mapa.isExpandido() && !mapa.isInputBloqueado()) {
+            float targetX = utiles.getMouseX();
+            float targetY = utiles.getMouseY();
+            jugador.actualizar(delta, targetX, targetY);
         } else {
-            // Opcional: Resetear velocidad cuando el mapa está abierto
-            jugador.estaEnMovimiento = false;
+            detenerMovimientoJugador();
         }
+
     }
 
+
+    private void detenerMovimientoJugador() {
+        // Implementa según tu clase Jugador
+        jugador.estaEnMovimiento = false;
+
+        // Si tu jugador tiene velocidad, también podrías resetearla:
+        // jugador.setVelocidad(0, 0);
+    }
     public void render() {
         batch.begin();
         jugador.render(batch);

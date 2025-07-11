@@ -18,8 +18,6 @@ public abstract class Objeto{
         this.mapaY = mapaY;
         this.mapaX = mapaX;
         this.escala = escala;
-
-
     }
 
 
@@ -36,6 +34,7 @@ public abstract class Objeto{
 
         return texture;
     }
+
     public float getMapaX() {
 
         return mapaX - (texture.getWidth() * escala / 2f);

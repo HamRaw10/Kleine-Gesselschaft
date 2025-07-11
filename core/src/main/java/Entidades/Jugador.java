@@ -89,6 +89,8 @@ public class Jugador extends Personaje {
             }
         }
 
+
+
         batch.draw(
             frame,
             getPersonajeX(),
