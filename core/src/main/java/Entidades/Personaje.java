@@ -38,6 +38,42 @@ public abstract class Personaje {
         personajeX = MathUtils.clamp(personajeX, minX, maxX);//
         personajeY = MathUtils.clamp(personajeY, minY, maxY);//
     }
+
+    public void Colisiones(List<Rectangle> obstaculos, float ANCHO_MAPA, float ALTO_MAPA) {
+        // limitar al borde izquierdo
+        if (personajeX < 0) {
+            personajeX = 0;
+        }
+
+        // Limitar al borde derecho
+        if (personajeX + getWidth() > ANCHO_MAPA) {
+            personajeX = ANCHO_MAPA - getWidth();
+        }
+
+        // Limitar al borde inferior
+        if (personajeY < 0) {
+            personajeY = 0;
+        }
+
+        // lmitar al borde superior
+        if (personajeY + getHeight() > ALTO_MAPA) {
+            personajeY = ALTO_MAPA - getHeight();
+        }
+
+        // crear el rectangulo del jugador con su nueva posicion tentativa
+        Rectangle rectJugador = new Rectangle(personajeX, personajeY, getWidth(), getHeight());
+
+        // verificar colisiones con obstaculos
+        for (Rectangle obstaculo : obstaculos) {
+            if (rectJugador.overlaps(obstaculo)) {
+                // rvertir posicion si hay colison
+                personajeX -= velocidadX;
+                personajeY -= velocidadY;
+                break;
+            }
+        }
+    }
+
     public void actualizar(float delta, float targetX, float targetY) {
 
     }
