@@ -20,6 +20,8 @@ public abstract class Personaje {
     protected float escala;
     protected float ancho;
     protected float largo;
+    protected float velocidadX;
+    protected float velocidadY;
 
     public Personaje(String texturaDelPersonaje, float personajeX, float personajeY, float escala){
         this.texture = new Texture(texturaDelPersonaje);
