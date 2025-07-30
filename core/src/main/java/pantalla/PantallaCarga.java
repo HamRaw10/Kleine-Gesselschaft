@@ -16,7 +16,10 @@ public class PantallaCarga implements Screen {
 
     @Override
     public void render(float delta) {
-
+        Render.limpiarPantalla();
+        Render.batch.begin();
+                fondo.dibujar(); //aun faltaria la imagen de la pantalla de carga
+        Render.batch.end();
     }
 
     @Override
