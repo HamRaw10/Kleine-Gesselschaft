@@ -11,7 +11,7 @@ public class PantallaCarga implements Screen {
     Imagen fondo;
     @Override
     public void show() {
-
+        fondo = new Imagen(Recursos.fondos);
     }
 
     @Override
