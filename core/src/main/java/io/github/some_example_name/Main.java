@@ -23,7 +23,7 @@ public class Main extends ApplicationAdapter {
 
 
         manejo.actualizar(Gdx.graphics.getDeltaTime());
-        manejo.render();
+         manejo.render();
     }
 
     public void update(){
