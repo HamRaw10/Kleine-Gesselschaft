@@ -11,7 +11,9 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void create() {
-        manejo = new controlDelJuego();  // Inicia el administrador del juego
+        manejo = new controlDelJuego(); // Inicia el administrador del juego
+        Render.batch = new SpriteBatch();
+        this.setScreen(new PantallaCarga()); // Establece la pantalla de carga como la primera
     }
 
     @Override
