@@ -26,6 +26,10 @@ public class Main extends ApplicationAdapter {
         manejo.render();
     }
 
+    public void update(){
+
+    }
+
     @Override
     public void dispose() {
         Render.batch.dispose();
