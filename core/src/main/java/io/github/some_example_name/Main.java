@@ -28,6 +28,7 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void dispose() {
+        Render.batch.dispose();
         manejo.dispose();
     }
 }
