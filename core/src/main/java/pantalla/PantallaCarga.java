@@ -2,7 +2,13 @@ package pantalla;
 
 import com.badlogic.gdx.Screen;
 
-public class pantallaCarga implements Screen {
+import Utilidades.Recursos;
+import Utilidades.Render;
+import objetos.Imagen;
+
+public class PantallaCarga implements Screen {
+
+    Imagen fondo;
     @Override
     public void show() {
 
