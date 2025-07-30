@@ -18,8 +18,8 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void render() {
-        Gdx.gl.glClearColor(0.25f, 0.25f, 0.25f, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        Render.limpiarPantalla();
+        super.render();
 
 
         manejo.actualizar(Gdx.graphics.getDeltaTime());
