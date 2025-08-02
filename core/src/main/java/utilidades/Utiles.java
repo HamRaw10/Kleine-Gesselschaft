@@ -1,11 +1,11 @@
-package Utilidades;
+package utilidades;
 
 import com.badlogic.gdx.Gdx;
 
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 
-public class utiles {
+public class Utiles {
 
     public static boolean Clickear(){
         return Gdx.input.isTouched();

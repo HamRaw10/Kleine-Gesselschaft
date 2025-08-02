@@ -1,18 +1,18 @@
-package Controles;
+package controles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import Entidades.Jugador;
+import entidades.Jugador;
 import objetos.Mapa;
-import Utilidades.utiles;
+import utilidades.Utiles;
 
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
-public class controlDelJuego {
+public class ControlDelJuego {
     private Jugador jugador;
     private SpriteBatch batch;
     private Mapa mapa;
 
-    public controlDelJuego(){
+    public ControlDelJuego(){
         batch = new SpriteBatch();
         jugador = new Jugador();
         mapa = new Mapa();
@@ -27,8 +27,8 @@ public class controlDelJuego {
         mapa.actualizar(delta, mouseX, mouseY);
 
         if (!mapa.isExpandido() && !mapa.isInputBloqueado()) {
-            float targetX = utiles.getMouseX();
-            float targetY = utiles.getMouseY();
+            float targetX = Utiles.getMouseX();
+            float targetY = Utiles.getMouseY();
             jugador.actualizar(delta, targetX, targetY);
         } else {
             detenerMovimientoJugador();

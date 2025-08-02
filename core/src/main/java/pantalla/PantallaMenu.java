@@ -24,6 +24,7 @@ public class PantallaMenu implements Screen {
         escenario = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(escenario);
 
+
         skin = new Skin(Gdx.files.internal("uiskin.json"));
 
         TextButton botonJugar = new TextButton("Jugar", skin);
@@ -53,11 +54,10 @@ public class PantallaMenu implements Screen {
     }
 
     @Override public void hide() {
-        // Limpieza crítica cuando la pantalla se oculta
         Gdx.input.setInputProcessor(null);
-        escenario.clear(); // Elimina todos los actores
+        escenario.clear();
     }
-    // Los otros métodos pueden estar vacíos o manejar recursos:
+
     @Override public void show() {}
     @Override public void resize(int width, int height) {
         escenario.getViewport().update(width, height, true);

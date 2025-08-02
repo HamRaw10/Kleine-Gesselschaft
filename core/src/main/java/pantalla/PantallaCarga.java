@@ -37,28 +37,29 @@ public class PantallaCarga implements Screen {
         Gdx.gl.glClearColor(0, 0, 0.1f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        //POR ALGUNA RAZON ESTO NO FUNCIONA: AVERIGUAR POR QUE NO SE DIBUJA
         if (assets.update()) {
-            // 100% cargado
+            // Solo va a cargar si todos los assets estan cargados
             juego.setScreen(new PantallaJuego(juego));
         } else {
-            progreso = assets.getProgress(); // valor de 0.0 a 1.0
+            progreso = assets.getProgress(); // rango de valores de 0.0 a 1.0
 
-            // 1. Dibujar la barra de carga PRIMERO (ShapeRenderer)
+            // Dibuja la barra de carga
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
-            // Configura la matriz de proyección (igual que el viewport de SpriteBatch)
+            // Se asegura que la barra sea dibujada en el espacio adecuado
             shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
 
-            // Fondo de la barra (gris)
+            // Fondo
             shapeRenderer.setColor(0.3f, 0.3f, 0.3f, 1);
             shapeRenderer.rect(50, 50, 400, 30);
 
-            // Relleno (azul)
+            // Relleno
             shapeRenderer.setColor(0, 0.5f, 1f, 1);
             shapeRenderer.rect(50, 50, 400 * progreso, 30);
             shapeRenderer.end();
 
-            // 2. Dibujar el texto DESPUÉS (SpriteBatch)
+            // Texto
             batch.begin();
             fuente.setColor(1, 1, 1, 1); // Color blanco
             fuente.draw(batch, "Cargando... " + (int)(progreso * 100) + "%", 100, 200);

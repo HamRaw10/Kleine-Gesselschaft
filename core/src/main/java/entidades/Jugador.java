@@ -1,10 +1,10 @@
-package Entidades;
+package entidades;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import Utilidades.Animacion;
-import Utilidades.utiles;
+import utilidades.Animacion;
+import utilidades.Utiles;
 
 public class Jugador extends Personaje {
 
@@ -45,7 +45,7 @@ public class Jugador extends Personaje {
         float prevX = personajeX;
         float prevY = personajeY;
 
-        if (utiles.Clickear()) {
+        if (Utiles.Clickear()) {
             velocidadX = (targetX - personajeX) * velocidad * delta * 60;
             velocidadY = (targetY - personajeY) * velocidad * delta * 60;
 

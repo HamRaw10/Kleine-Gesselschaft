@@ -59,3 +59,13 @@ de mejor manera.
 
 ### Fixed 
 - No se ha corregido ningún error en esta versión.
+- 
+## [1.2.0] - 2025-07-31
+
+### Added
+- Una pantalla de carga con su respectiva clase
+- Un menu con un boton de jugar
+### Changed
+- Se transfirieron algunas funciones de main a la clase de pantallaCarga dejandola a esta semivacia
+### Fixed
+- Se borraron clases incompletas.

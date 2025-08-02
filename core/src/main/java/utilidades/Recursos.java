@@ -1,4 +1,4 @@
-package Utilidades;
+package utilidades;
 
 public class Recursos {
 

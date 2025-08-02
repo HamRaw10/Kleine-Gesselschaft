@@ -1,4 +1,4 @@
-package Entidades;
+package entidades;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -8,9 +8,6 @@ import java.util.List;
 
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
-
-import Utilidades.Animacion;
-import Utilidades.utiles;
 
 public abstract class Personaje {
     protected float personajeX;
