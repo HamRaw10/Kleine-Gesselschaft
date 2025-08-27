@@ -3,6 +3,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import entidades.Jugador;
 import objetos.Mapa;
+import objetos.Fondo;
 import utilidades.Utiles;
 
 
