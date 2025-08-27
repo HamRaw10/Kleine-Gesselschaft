@@ -12,11 +12,13 @@ public class ControlDelJuego {
     private Jugador jugador;
     private SpriteBatch batch;
     private Mapa mapa;
+    private Fondo fondo;
 
     public ControlDelJuego(){
         batch = new SpriteBatch();
         jugador = new Jugador();
         mapa = new Mapa();
+        fondo = new Fondo("/fondoPrueba.jpg");
     }
 
     public void actualizar(float delta){
@@ -24,7 +26,7 @@ public class ControlDelJuego {
         float mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
 
 
-        // Actualizar el mapa (siempre)
+
         mapa.actualizar(delta, mouseX, mouseY);
 
         if (!mapa.isExpandido() && !mapa.isInputBloqueado()) {
@@ -34,19 +36,19 @@ public class ControlDelJuego {
         } else {
             detenerMovimientoJugador();
         }
-
     }
 
 
     private void detenerMovimientoJugador() {
-        // Implementa según tu clase Jugador
         jugador.estaEnMovimiento = false;
 
-        // Si tu jugador tiene velocidad, también podrías resetearla:
-        // jugador.setVelocidad(0, 0);
+
     }
     public void render() {
+
         batch.begin();
+
+        fondo.render(batch);
         jugador.render(batch);
         mapa.render(batch);
         batch.end();
@@ -56,8 +58,6 @@ public class ControlDelJuego {
         batch.dispose();
         jugador.dispose();
         mapa.dispose();
+        fondo.dispose();
     }
-
-
-
 }
