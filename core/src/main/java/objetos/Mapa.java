@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 import java.util.HashMap;
 import java.lang.String;
+import utilidades.Chat;
 
 public class Mapa extends Objeto {
     private final Texture mapaCompleto;
@@ -27,7 +28,7 @@ public class Mapa extends Objeto {
     private HashMap<String, String> regionAEscenario;   // les añade escenarios a las regiones
     public Mapa() {
         super("mapa.png", Gdx.graphics.getWidth() - 120, 70, 0.2f);
-        this.mapaCompleto = new Texture("MapaGrande.jpg");
+        this.mapaCompleto = new Texture("mapanuevo.png");
         this.botonCerrar = new Texture("botonCerrar.png"); // Necesitarás esta textura
         this.bounds = new Rectangle(getMapaX(), getMapaY(), getWidth(), getHeight()); // Ahora acepta floats
         this.boundsBotonCerrar = new Rectangle();
@@ -92,7 +93,8 @@ public class Mapa extends Objeto {
             toggleExpandido();
         }
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.M)) {
+
+        if (!Chat.estaEscribiendo() && Gdx.input.isKeyJustPressed(Input.Keys.M)) {
             toggleExpandido();
         }
 
@@ -173,6 +175,4 @@ public class Mapa extends Objeto {
         super.dispose();
         mapaCompleto.dispose();
     }
-
-
 }
