@@ -1,9 +1,12 @@
 package controles;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import entidades.Jugador;
 import objetos.Mapa;
 import utilidades.Utiles;
+import utilidades.Chat;
+
 
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
@@ -44,6 +47,18 @@ public class ControlDelJuego {
         // Si tu jugador tiene velocidad, también podrías resetearla:
         // jugador.setVelocidad(0, 0);
     }
+
+    // ✅ Getter para integrar con Chat
+    public Jugador getJugador() {
+        return jugador;
+    }
+
+    // ✅ Si usás inputProcessor propio
+    public InputProcessor getInputProcessor() {
+        // devolver el stage de UI, o null si no tenés
+        return null;
+    }
+
     public void render() {
         batch.begin();
         jugador.render(batch);

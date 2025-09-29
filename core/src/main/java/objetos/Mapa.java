@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 import java.util.HashMap;
 import java.lang.String;
+import utilidades.Chat;
 
 public class Mapa extends Objeto {
     private final Texture mapaCompleto;
@@ -92,7 +93,8 @@ public class Mapa extends Objeto {
             toggleExpandido();
         }
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.M)) {
+
+        if (!Chat.estaEscribiendo() && Gdx.input.isKeyJustPressed(Input.Keys.M)) {
             toggleExpandido();
         }
 
@@ -173,6 +175,4 @@ public class Mapa extends Objeto {
         super.dispose();
         mapaCompleto.dispose();
     }
-
-
 }
