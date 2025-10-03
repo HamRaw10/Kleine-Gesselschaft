@@ -5,8 +5,6 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import entidades.Jugador;
 import objetos.Mapa;
 import utilidades.Utiles;
-import utilidades.Chat;
-
 
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
@@ -59,11 +57,11 @@ public class ControlDelJuego {
         return null;
     }
 
-    public void render() {
-        batch.begin();
-        jugador.render(batch);
-        mapa.render(batch);
-        batch.end();
+    public void render(SpriteBatch batch) {
+        this.batch.begin();
+        jugador.render(this.batch);
+        mapa.render(this.batch);
+        this.batch.end();
     }
 
     public void dispose() {

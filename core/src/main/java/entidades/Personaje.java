@@ -20,14 +20,35 @@ public abstract class Personaje {
     protected float velocidadX;
     protected float velocidadY;
 
+    // NUEVO: Hitbox para colisiones (más pequeño que el sprite para precisión)
+    protected Rectangle hitbox;
+
     public Personaje(String texturaDelPersonaje, float personajeX, float personajeY, float escala){
         this.texture = new Texture(texturaDelPersonaje);
         this.personajeY = personajeY;
         this.personajeX = personajeX;
         this.escala = escala;
 
-
+        // NUEVO: Inicializar hitbox (ej. 80% del tamaño del sprite)
+        float hitboxWidth = getWidth() * 0.8f;
+        float hitboxHeight = getHeight() * 0.8f;
+        hitbox = new Rectangle(
+            personajeX - hitboxWidth / 2,
+            personajeY - hitboxHeight / 2,
+            hitboxWidth,
+            hitboxHeight
+        );
     }
+
+    protected void actualizarPosicion(float newX, float newY) {
+        this.personajeX = newX;
+        this.personajeY = newY;
+        // Actualizar hitbox
+        float halfWidth = hitbox.width / 2;
+        float halfHeight = hitbox.height / 2;
+        hitbox.setPosition(personajeX - halfWidth, personajeY - halfHeight);
+    }
+
 
     public void limitesDelPersonaje(){
         float minX = texture.getWidth() / 2f;//
