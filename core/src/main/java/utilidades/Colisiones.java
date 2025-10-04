@@ -1,5 +1,7 @@
 package utilidades;  // Ajusta el paquete según tu estructura
 
+
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import java.util.ArrayList;
@@ -41,26 +43,24 @@ public class Colisiones {
      * @return true si hay colisión con un tile
      */
     public boolean colisionConTiles(Rectangle rect) {
-        // Calcular tiles que cubre el rectángulo
-        int tileX1 = (int) (rect.x / TILE_SIZE);
-        int tileY1 = (int) (rect.y / TILE_SIZE);
-        int tileX2 = (int) ((rect.x + rect.width) / TILE_SIZE);
-        int tileY2 = (int) ((rect.y + rect.height) / TILE_SIZE);
-
-        // Chequear cada tile en el área
+        int tileX1 = Math.max(0, (int)Math.floor(rect.x / TILE_SIZE));
+        int tileY1 = Math.max(0, (int)Math.floor(rect.y / TILE_SIZE));
+        int tileX2 = Math.min(MAP_WIDTH  - 1, (int)Math.floor((rect.x + rect.width  - 0.001f) / TILE_SIZE));
+        int tileY2 = Math.min(MAP_HEIGHT - 1, (int)Math.floor((rect.y + rect.height - 0.001f) / TILE_SIZE));
         for (int y = tileY1; y <= tileY2; y++) {
             for (int x = tileX1; x <= tileX2; x++) {
                 if (esTileColisionable(x, y)) {
-                    // Verificar colisión precisa con el tile (no solo si el tile es colisionable)
-                    Rectangle tileRect = new Rectangle(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                    if (rect.overlaps(tileRect)) {
-                        return true;
-                    }
+                    Rectangle t = new Rectangle(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    if (rect.overlaps(t)) return true;
                 }
             }
         }
         return false;
     }
+
+
+
+
 
     /**
      * Predice si mover la entidad a una nueva posición causaría colisión con tiles.
@@ -125,11 +125,117 @@ public class Colisiones {
         return obstaculos;
     }
 
+    public boolean colisionaRect(float x, float y, float w, float h) {
+        return colisionConTiles(new Rectangle(x, y, w, h));
+    }
+
+
+    public void setTileColisionable(int tileX, int tileY, boolean colisiona) {
+        if (tileX < 0 || tileX >= MAP_WIDTH || tileY < 0 || tileY >= MAP_HEIGHT) return;
+        tileTypes[tileY][tileX] = colisiona ? 1 : 0;
+    }
+
+    public void setRegionColisionableTiles(int tx0, int ty0, int tx1, int ty1, boolean colisiona) {
+        int minX = Math.max(0, Math.min(tx0, tx1));
+        int maxX = Math.min(MAP_WIDTH  - 1, Math.max(tx0, tx1));
+        int minY = Math.max(0, Math.min(ty0, ty1));
+        int maxY = Math.min(MAP_HEIGHT - 1, Math.max(ty0, ty1));
+        int val = colisiona ? 1 : 0;
+        for (int ty = minY; ty <= maxY; ty++)
+            for (int tx = minX; tx <= maxX; tx++)
+                tileTypes[ty][tx] = val;
+    }
+
+    public void setRegionColisionablePixels(float x, float y, float w, float h, boolean colisiona) {
+        int tx0 = (int) Math.floor(x / TILE_SIZE);
+        int ty0 = (int) Math.floor(y / TILE_SIZE);
+        int tx1 = (int) Math.floor((x + w - 1) / TILE_SIZE);
+        int ty1 = (int) Math.floor((y + h - 1) / TILE_SIZE);
+        setRegionColisionableTiles(tx0, ty0, tx1, ty1, colisiona);
+    }
+
+    public void setCirculoColisionablePixels(float cx, float cy, float radio, boolean colisiona) {
+        int tx0 = (int) Math.floor((cx - radio) / TILE_SIZE);
+        int ty0 = (int) Math.floor((cy - radio) / TILE_SIZE);
+        int tx1 = (int) Math.floor((cx + radio) / TILE_SIZE);
+        int ty1 = (int) Math.floor((cy + radio) / TILE_SIZE);
+        int val = colisiona ? 1 : 0;
+
+        for (int ty = Math.max(0, ty0); ty <= Math.min(MAP_HEIGHT - 1, ty1); ty++) {
+            for (int tx = Math.max(0, tx0); tx <= Math.min(MAP_WIDTH - 1, tx1); tx++) {
+                float cxTile = tx * TILE_SIZE + TILE_SIZE * 0.5f;
+                float cyTile = ty * TILE_SIZE + TILE_SIZE * 0.5f;
+                float dx = cxTile - cx, dy = cyTile - cy;
+                if (dx*dx + dy*dy <= radio*radio) tileTypes[ty][tx] = val;
+            }
+        }
+    }
+
+
+    public void toggleRegionTiles(int tx0, int ty0, int tx1, int ty1) {
+        int minX = Math.max(0, Math.min(tx0, tx1));
+        int maxX = Math.min(MAP_WIDTH  - 1, Math.max(tx0, tx1));
+        int minY = Math.max(0, Math.min(ty0, ty1));
+        int maxY = Math.min(MAP_HEIGHT - 1, Math.max(ty0, ty1));
+        for (int ty = minY; ty <= maxY; ty++)
+            for (int tx = minX; tx <= maxX; tx++)
+                tileTypes[ty][tx] = (tileTypes[ty][tx] == 1) ? 0 : 1;
+    }
+
+    // === A) Un (1) tile: coloca en el mapa visual y marca colisión ===
+    public void ponerTile(TextureRegion region, int tileX, int tileY,
+                          boolean solido, TextureRegion[][] mapaVisual) {
+        if (tileX < 0 || tileX >= MAP_WIDTH || tileY < 0 || tileY >= MAP_HEIGHT) return;
+        mapaVisual[tileY][tileX] = region;          // dibujado
+        tileTypes[tileY][tileX]  = solido ? 1 : 0;  // colisión
+    }
+
+    // === B) Bloque rectangular NxM desde el atlas: todo sólido o todo libre ===
+    public void ponerBloque(TextureRegion[][] atlas,
+                            int atlasRow, int atlasCol, int anchoTiles, int altoTiles,
+                            int destTileX, int destTileY, boolean solido,
+                            TextureRegion[][] mapaVisual) {
+        for (int dy = 0; dy < altoTiles; dy++) {
+            for (int dx = 0; dx < anchoTiles; dx++) {
+                int tx = destTileX + dx;
+                int ty = destTileY + dy;
+                if (tx < 0 || tx >= MAP_WIDTH || ty < 0 || ty >= MAP_HEIGHT) continue;
+
+                mapaVisual[ty][tx] = atlas[atlasRow + dy][atlasCol + dx];
+                tileTypes[ty][tx] = solido ? 1 : 0;
+            }
+        }
+    }
+
+    // === C) Bloque NxM con MÁSCARA de colisión (true = sólido, false = libre) ===
+    public void ponerBloqueConMascara(TextureRegion[][] atlas,
+                                      int atlasRow, int atlasCol, int anchoTiles, int altoTiles,
+                                      int destTileX, int destTileY, boolean[][] mascaraSolida,
+                                      TextureRegion[][] mapaVisual) {
+        for (int dy = 0; dy < altoTiles; dy++) {
+            for (int dx = 0; dx < anchoTiles; dx++) {
+                int tx = destTileX + dx;
+                int ty = destTileY + dy;
+                if (tx < 0 || tx >= MAP_WIDTH || ty < 0 || ty >= MAP_HEIGHT) continue;
+
+                mapaVisual[ty][tx] = atlas[atlasRow + dy][atlasCol + dx];
+                boolean solido = mascaraSolida != null && dy < mascaraSolida.length
+                    && dx < mascaraSolida[dy].length && mascaraSolida[dy][dx];
+                tileTypes[ty][tx] = solido ? 1 : 0;
+            }
+        }
+    }
+
+
+
 
 
     // Getters para acceso externo si necesitas
     public int getTILE_SIZE() { return TILE_SIZE; }
     public int getMAP_WIDTH() { return MAP_WIDTH; }
     public int getMAP_HEIGHT() { return MAP_HEIGHT; }
+
+
+
 }
 

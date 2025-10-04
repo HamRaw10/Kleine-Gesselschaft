@@ -1,75 +1,81 @@
 package controles;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector3;
+
 import entidades.Jugador;
 import objetos.Mapa;
+import utilidades.Colisiones;
 import utilidades.Utiles;
 
-
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
+/** Lógica principal de juego / puente entre input y entidades. */
 public class ControlDelJuego {
     private Jugador jugador;
-    private SpriteBatch batch;
     private Mapa mapa;
+    private Colisiones colisiones;
+    private com.badlogic.gdx.graphics.OrthographicCamera cam;
+    private float destinoX, destinoY;
 
-    public ControlDelJuego(){
-        batch = new SpriteBatch();
-        jugador = new Jugador();
-        mapa = new Mapa();
+
+    /** NUEVO: recibe colisiones y crea Jugador con ellas */
+    public ControlDelJuego(Colisiones colisiones) {
+        this.jugador = new Jugador(colisiones);
+        this.colisiones = colisiones;
+        this.mapa = new Mapa();
     }
 
-    public void actualizar(float delta){
+
+
+    public void actualizar(float delta) {
         float mouseX = Gdx.input.getX();
         float mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
-
-
-        // Actualizar el mapa (siempre)
         mapa.actualizar(delta, mouseX, mouseY);
 
         if (!mapa.isExpandido() && !mapa.isInputBloqueado()) {
-            float targetX = Utiles.getMouseX();
-            float targetY = Utiles.getMouseY();
-            jugador.actualizar(delta, targetX, targetY);
+            // solo al hacer click actualizamos destino
+            if (Gdx.input.justTouched()) {
+                com.badlogic.gdx.math.Vector3 w = cam.unproject(new com.badlogic.gdx.math.Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
+                destinoX = w.x; destinoY = w.y;
+            }
+            jugador.actualizar(delta, destinoX, destinoY);
         } else {
             detenerMovimientoJugador();
         }
-
     }
 
 
     private void detenerMovimientoJugador() {
-        // Implementa según tu clase Jugador
+        // Deja de animar como moviéndose
         jugador.estaEnMovimiento = false;
-
-        // Si tu jugador tiene velocidad, también podrías resetearla:
-        // jugador.setVelocidad(0, 0);
+        // Si agregas setters de velocidad en Jugador, ponlos aquí a 0.
     }
 
-    // ✅ Getter para integrar con Chat
-    public Jugador getJugador() {
+    // Getter usado por Chat y otros
+    public entidades.Jugador getJugador() {
         return jugador;
     }
 
-    // ✅ Si usás inputProcessor propio
     public InputProcessor getInputProcessor() {
-        // devolver el stage de UI, o null si no tenés
+        // Devuelve tu Stage/UI si tienes. Por ahora null.
         return null;
     }
 
-    public void render(SpriteBatch batch) {
-        this.batch.begin();
-        jugador.render(this.batch);
-        mapa.render(this.batch);
-        this.batch.end();
+    /** Usa el SpriteBatch que te pasa PantallaJuego. No crees uno propio aquí. */
+    public void render(com.badlogic.gdx.graphics.g2d.SpriteBatch batch) {
+        jugador.render(batch);
     }
 
     public void dispose() {
-        batch.dispose();
+        // No disposes 'batch' aquí porque no lo creamos en esta clase
         jugador.dispose();
         mapa.dispose();
     }
 
-
+    public void setCamera(com.badlogic.gdx.graphics.OrthographicCamera cam) {
+        this.cam = cam;
+    }
 
 }
