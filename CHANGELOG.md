@@ -69,3 +69,18 @@ de mejor manera.
 - Se transfirieron algunas funciones de main a la clase de pantallaCarga dejandola a esta semivacia
 ### Fixed
 - Se borraron clases incompletas.
+- Se arreglo un error el funcionamiento de el movimiento de los personajes cuando se redimensiona la pantalla
+
+## [1.3.0] - 2025-10-5
+
+### Added
+- Se agrego un mapa continuo que permite al personaje viajar por distintas areas
+- Se agrego un boton de chat donde el mensaje aparece por arriba de la posicion del personaje
+- Se hizo un menu mas amigable para el usuario con un logo
+- Se cambio la forma de que el personaje pueda caminar para que se asemeje mas a la forma de mundo gaturro
+- Se agrego un nuevo paquete de assets
+### Changed
+- Se cambio la logica de la clase pantallaJuego
+- Se cambio la clase pantallaMenu para que pueda procesar el logo y los botones
+### Fixed
+- Se arreglo el problema que al redimensionar la pantalla el personaje no siga el movimiento que elijio el usuario.
