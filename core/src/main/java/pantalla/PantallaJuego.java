@@ -14,12 +14,14 @@ import controles.ControlDelJuego;
 import utilidades.Chat;
 import utilidades.Colisiones;
 import utilidades.Render;
-
+import utilidades.Inventario;
 public class PantallaJuego extends ScreenAdapter {
 
     private Colisiones colisiones;
     private ControlDelJuego manejo;
     private Chat chat;
+
+    private Inventario inventario;
 
     private Texture tileset;
     private TextureRegion[][] mapa;
@@ -97,6 +99,7 @@ public class PantallaJuego extends ScreenAdapter {
 
         Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
         chat = new Chat(skin, manejo.getJugador());
+        inventario = new Inventario(skin, chat);
     }
 
 
@@ -151,9 +154,15 @@ public class PantallaJuego extends ScreenAdapter {
         chat.actualizar(delta);
         chat.render();
 
+        // Inventario
+        inventario.actualizar(delta);
+        inventario.render();
+
         if (chat.isChatVisible()) {
             chat.setInputProcessor();
-        } else {
+        } else if (inventario.isVisible()) {
+            inventario.setInputProcessor();
+        }else {
             Gdx.input.setInputProcessor(manejo.getInputProcessor());
         }
     }
@@ -163,6 +172,7 @@ public class PantallaJuego extends ScreenAdapter {
         camara.setToOrtho(false, width, height);
         camara.update();
         if (chat != null) chat.resize(width, height);
+        if (inventario != null) inventario.resize(width, height); // Nueva línea
     }
 
     @Override
@@ -171,5 +181,6 @@ public class PantallaJuego extends ScreenAdapter {
         if (Render.batch != null) Render.batch.dispose();
         if (manejo != null) manejo.dispose();
         if (chat != null) chat.dispose();
+        if (inventario != null) inventario.dispose(); // Nueva línea
     }
 }
