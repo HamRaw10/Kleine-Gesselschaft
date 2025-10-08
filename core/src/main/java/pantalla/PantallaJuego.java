@@ -2,6 +2,7 @@ package pantalla;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -11,6 +12,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import controles.ControlDelJuego;
+import entidades.Jugador;
 import utilidades.Chat;
 import utilidades.Colisiones;
 import utilidades.Render;
@@ -18,6 +20,7 @@ import utilidades.Inventario;
 public class PantallaJuego extends ScreenAdapter {
 
     private Colisiones colisiones;
+    public Jugador jugador;
     private ControlDelJuego manejo;
     private Chat chat;
 
@@ -99,7 +102,7 @@ public class PantallaJuego extends ScreenAdapter {
 
         Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
         chat = new Chat(skin, manejo.getJugador());
-        inventario = new Inventario(skin, chat);
+        inventario = new Inventario(skin, chat, jugador);
     }
 
 
@@ -160,8 +163,11 @@ public class PantallaJuego extends ScreenAdapter {
 
         if (chat.isChatVisible()) {
             chat.setInputProcessor();
-        } else if (inventario.isVisible()) {
-            inventario.setInputProcessor();
+        } if (!inventario.isVisible()) {
+            if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                float x = Gdx.input.getX();
+                float y = Gdx.graphics.getHeight() - Gdx.input.getY();
+            }
         }else {
             Gdx.input.setInputProcessor(manejo.getInputProcessor());
         }

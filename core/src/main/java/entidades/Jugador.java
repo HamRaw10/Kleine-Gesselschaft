@@ -3,16 +3,17 @@ package entidades;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Rectangle;
 
 import utilidades.Animacion;
 import utilidades.Colisiones;
-import utilidades.Utiles;
 
 public class Jugador extends Personaje {
 
     // NUEVO: referencia a colisiones y hitbox
     private Colisiones colisiones;
+    // En Jugador
+    private boolean bloqueado = false;
+    public Personaje personaje;
     private float hitW = 20f, hitH = 14f; // hitbox “pies” (ajustá a tu sprite)
     private float velPx = 160f;
     public boolean estaEnMovimiento = false;
@@ -182,8 +183,25 @@ public class Jugador extends Personaje {
     }
 
 
+    public float getVelPx() {
+        return velPx;
+    }
+    public void setVelPx(float v) {
+        velPx = v;
+    }
+
+    public void cancelarMovimiento() {
+        velocidadX = 0f;
+        velocidadY = 0f;
+        estaEnMovimiento = false;
+    }
     @Override
     public void actualizar(float delta, float targetX, float targetY) {
+        if (bloqueado) {
+            velocidadX = 0;
+            velocidadY = 0;
+            return;
+        }
         float cx = personajeX + getWidth() * 0.5f;
         float cy = personajeY + getHeight() * 0.3f;
         float dx = targetX - cx;
@@ -258,6 +276,12 @@ public class Jugador extends Personaje {
         boolean mov = Math.abs(velocidadX) > 0.001f || Math.abs(velocidadY) > 0.001f;
         estaEnMovimiento = mov;
         return mov;
+    }
+
+    public void setBloqueado(boolean b) {
+            bloqueado = b;
+            velocidadX = 0;
+            velocidadY = 0;
     }
 
 

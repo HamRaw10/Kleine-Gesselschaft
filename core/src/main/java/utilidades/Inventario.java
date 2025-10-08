@@ -12,10 +12,14 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import entidades.Jugador;
 
 public class Inventario {
     private Stage escenarioInventario;
     private boolean visible;
+    public Jugador jugador;
+    private Float velBackup = null;
+
     private ShapeRenderer shapeRenderer;
     private SpriteBatch batch;
     private Skin skin;
@@ -35,9 +39,10 @@ public class Inventario {
     private final int FILAS = 5;
     private final int COLUMNAS = 4;
 
-    public Inventario(Skin skin, Chat chat) { // Añadido parámetro Chat
+    public Inventario(Skin skin, Chat chat, Jugador jugador) { // Añadido parámetro Chat
         this.skin = skin;
         this.chat = chat;
+        this.jugador = jugador;
         this.visible = false;
         this.escenarioInventario = new Stage(new ScreenViewport());
         this.shapeRenderer = new ShapeRenderer();
@@ -149,13 +154,22 @@ public class Inventario {
     private void abrirInventario() {
         visible = true;
         Gdx.input.setInputProcessor(escenarioInventario);
-        // Opcional: Pausar juego (agrega flag en ControlDelJuego)
+        if (jugador != null) {
+            if (velBackup == null) velBackup = jugador.getVelPx(); // guardar
+            jugador.setVelPx(0f);       // bloquear movimiento por velocidad
+            jugador.cancelarMovimiento();// que quede quieto YA
+        }
     }
 
     private void cerrarInventario() {
         visible = false;
-        Gdx.input.setInputProcessor(null); // Se manejará en PantallaJuego
+        Gdx.input.setInputProcessor(null);
+        if (jugador != null && velBackup != null) {
+            jugador.setVelPx(velBackup);
+            velBackup = null;
+        }
     }
+
 
     public void resize(int width, int height) {
         escenarioInventario.getViewport().update(width, height, true);
