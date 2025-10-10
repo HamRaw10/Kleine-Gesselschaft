@@ -16,6 +16,7 @@ public class ControlDelJuego {
     private float destinoX, destinoY;
 
 
+
     /** NUEVO: recibe colisiones y crea Jugador con ellas */
     public ControlDelJuego(Colisiones colisiones) {
         this.jugador = new Jugador(colisiones);
@@ -72,6 +73,12 @@ public class ControlDelJuego {
 
     public void setCamera(com.badlogic.gdx.graphics.OrthographicCamera cam) {
         this.cam = cam;
+    }
+
+    public void setColisiones(Colisiones nuevasColisiones) {
+        this.colisiones = nuevasColisiones;
+        // Si tienes otros componentes que dependen de colisiones (ej: InputProcessor), actualízalos aquí si es necesario
+        Gdx.app.log("ControlDelJuego", "Colisiones actualizadas para nuevo mapa.");
     }
 
 }

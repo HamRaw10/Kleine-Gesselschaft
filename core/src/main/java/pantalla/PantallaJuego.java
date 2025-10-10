@@ -9,7 +9,16 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.maps.MapObject;
+import com.badlogic.gdx.maps.MapObjects;
+import com.badlogic.gdx.maps.objects.RectangleMapObject;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
+import com.badlogic.gdx.maps.tiled.TmxMapLoader;
+import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import controles.ControlDelJuego;
 import entidades.Jugador;
@@ -17,6 +26,7 @@ import utilidades.Chat;
 import utilidades.Colisiones;
 import utilidades.Render;
 import utilidades.Inventario;
+import objetos.Mapa;  // Tu minimapa
 public class PantallaJuego extends ScreenAdapter {
 
     private Colisiones colisiones;
@@ -36,7 +46,24 @@ public class PantallaJuego extends ScreenAdapter {
     private final int MAP_WIDTH  = 240;
     private final int MAP_HEIGHT = 160;
 
+
+    private TmxMapLoader mapLoader;
+    private TiledMap tiledMap;
+    private OrthogonalTiledMapRenderer renderer;
+    private Mapa minimapa;  // Referencia al minimapa para conectar cambios
+    private float mundoAncho, mundoAlto;
+
     private OrthographicCamera camara;
+
+    // Mapeo de regiones del minimapa a archivos TMX (ajusta según tus necesidades)
+    private java.util.Map<String, String> regionToTmx = new java.util.HashMap<>();
+    {
+        regionToTmx.put("compras", "compras.tmx");
+        regionToTmx.put("centro", "centro.tmx");
+        regionToTmx.put("Eduactivo", "Eduactivo.tmx");
+        regionToTmx.put("entreteniemiento", "entretenimiento.tmx");
+        regionToTmx.put("van", "van.tmx");
+    }
 
     public PantallaJuego(Game juego) {
         // Cámara
@@ -46,67 +73,97 @@ public class PantallaJuego extends ScreenAdapter {
         camara.update();
 
         Render.batch = new SpriteBatch();
+        mapLoader = new TmxMapLoader(Gdx.files.internal(""));  // Ruta base para TMX en assets/
     }
 
     @Override
     public void show() {
-        // 0) cargar tileset y cortar atlas
-        tileset = new Texture(Gdx.files.internal("town full/tiles/tiles.png")); // evita espacios en rutas
-        tileset.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-        final int TILE_W = 48, TILE_H = 48;
-        TextureRegion[][] atlas = TextureRegion.split(tileset, TILE_W, TILE_H);
 
-        final int MAP_W = MAP_WIDTH;
-        final int MAP_H = MAP_HEIGHT;
-
-        // 1) crear buffer visual y colisiones "en crudo"
-        mapa = new TextureRegion[MAP_H][MAP_W];
-        int[][] tileTypes = new int[MAP_H][MAP_W];
-
-        // 2) crear el manejador de colisiones con esa matriz
-        colisiones = new Colisiones(tileTypes, TILE_W, MAP_W, MAP_H);
-
-        // 3) ahora SÍ, usar helpers de colisión para poblar el mapa
-        TextureRegion pasto     = atlas[1][0]; // elige un tile "lleno"
-        TextureRegion obstaculo = atlas[0][4]; // algo sólido (roca/valla)
-
-        // piso base (libre)
-        for (int y = 0; y < MAP_H; y++) {
-            for (int x = 0; x < MAP_W; x++) {
-                colisiones.ponerTile(pasto, x, y, false, mapa);
-            }
-        }
-
-        // ejemplos de objetos:
-        // a) uno 1x1 sólido
-        colisiones.ponerTile(obstaculo, 20, 15, true, mapa);
-
-        // b) bloque 3x3 sólido (casa)
-        int casaRow = 10, casaCol = 5, casaW = 3, casaH = 3;
-        int destX = 40, destY = 22;
-        colisiones.ponerBloque(atlas, casaRow, casaCol, casaW, casaH, destX, destY, true, mapa);
-
-        // c) bloque 3x3 con máscara (solo base sólida)
-    /*
-    boolean[][] mask = {
-        {false,false,false},
-        {false,false,false},
-        {true, true, true}
-    };
-    colisiones.ponerBloqueConMascara(atlas, casaRow, casaCol, casaW, casaH, destX+6, destY, mask, mapa);
-    */
-
-        // 4) controlador + cámara + chat (después de tener colisiones)
+        // Cargar mapa inicial (ej: centro.tmx)
+        cambiarEscenario("fuente");  // O el que quieras como default
+        // Inicializar colisiones con el TMX (se actualizará en cambiarEscenario)
+        colisiones = new Colisiones(null, 48, 0, 0);  // Inicial temporal; se actualiza después
+        // ControlDelJuego (pasa colisiones)
         manejo = new ControlDelJuego(colisiones);
         manejo.setCamera(camara);
-
+        // Minimapa (agrega referencia a esta pantalla para callbacks)
+        minimapa = new Mapa(this);  // Modificaremos Mapa para aceptar PantallaJuego
         Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
         chat = new Chat(skin, manejo.getJugador());
-        inventario = new Inventario(skin, chat, jugador);
+        inventario = new Inventario(skin, chat, manejo.getJugador());
     }
 
 
-    @Override
+    public void cambiarEscenario(String nombreRegion) {
+        String tmxFile = regionToTmx.get(nombreRegion);
+        if (tmxFile == null) {
+            Gdx.app.log("PantallaJuego", "TMX no encontrado para región: " + nombreRegion);
+            return;
+        }
+
+        // Cargar TMX
+        tiledMap = mapLoader.load(tmxFile);
+        if (renderer != null) renderer.dispose();
+        renderer = new OrthogonalTiledMapRenderer(tiledMap, 1f / 48f, Render.batch);  // Escala si tiles son 48x48
+        // Tamaño del mundo (de la capa principal)
+        TiledMapTileLayer layer = (TiledMapTileLayer) tiledMap.getLayers().get(0);
+        mundoAncho = layer.getWidth() * 48;  // Asume tile size 48; ajusta si es diferente
+        mundoAlto = layer.getHeight() * 48;
+        // Configurar colisiones desde TMX (actualizar Colisiones)
+        actualizarColisionesDesdeTMX();
+
+        // Spawn del jugador (busca objeto "PlayerSpawn" en capa "Objects")
+        Vector2 spawn = encontrarSpawnPoint();
+        if (spawn != null) {
+            jugador = manejo.getJugador();
+            jugador.setPersonajeX(spawn.x);
+            jugador.setPersonajeY(spawn.y);
+        }
+        // Actualizar cámara bounds
+        camara.update();
+        Gdx.app.log("PantallaJuego", "Cambiado a escenario: " + tmxFile);
+    }
+
+
+    private void actualizarColisionesDesdeTMX() {
+        // Extraer matriz de colisiones de capa "Colisiones" (tiles con property "collidable=true")
+        TiledMapTileLayer colLayer = (TiledMapTileLayer) tiledMap.getLayers().get("Colisiones");
+        if (colLayer == null) {
+            colLayer = (TiledMapTileLayer) tiledMap.getLayers().get(0);  // Fallback a primera capa
+        }
+        int width = colLayer.getWidth();
+        int height = colLayer.getHeight();
+        int[][] tileTypes = new int[height][width];
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                var cell = colLayer.getCell(x, y);
+                tileTypes[y][x] = (cell != null && cell.getTile() != null &&
+                    cell.getTile().getProperties().containsKey("collidable") &&
+                    (Boolean) cell.getTile().getProperties().get("collidable")) ? 1 : 0;
+            }
+        }
+
+        colisiones = new Colisiones(tileTypes, 48, width, height);  // Tile size 48; ajusta
+        manejo.setColisiones(colisiones);  // Agrega setter en ControlDelJuego si no existe
+    }
+
+
+    private Vector2 encontrarSpawnPoint() {
+        MapObjects objects = tiledMap.getLayers().get("Objects").getObjects();  // Capa "Objects"
+        for (MapObject obj : objects) {
+            if (obj instanceof RectangleMapObject && "PlayerSpawn".equals(obj.getName())) {
+                Rectangle rect = ((RectangleMapObject) obj).getRectangle();
+                return new Vector2(rect.x, rect.y);
+            }
+        }
+        // Fallback si no hay spawn
+        return new Vector2(100, 100);
+    }
+
+
+
+
+        @Override
     public void render(float delta) {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -127,66 +184,62 @@ public class PantallaJuego extends ScreenAdapter {
         camara.position.y = MathUtils.clamp(camara.position.y, minY, maxY);
         camara.update();
 
-        Render.batch.setProjectionMatrix(camara.combined);
-        Render.batch.begin();
 
-        // Dibujar solo lo visible
-        int tilesAncho = (int)Math.ceil(camara.viewportWidth  / TILE_SIZE);
-        int tilesAlto  = (int)Math.ceil(camara.viewportHeight / TILE_SIZE);
-        int centerTileX = (int)(camara.position.x / TILE_SIZE);
-        int centerTileY = (int)(camara.position.y / TILE_SIZE);
-        int startX = Math.max(0, centerTileX - tilesAncho/2 - 1);
-        int startY = Math.max(0, centerTileY - tilesAlto /2 - 1);
-        int endX   = Math.min(MAP_WIDTH,  centerTileX + tilesAncho/2 + 2);
-        int endY   = Math.min(MAP_HEIGHT, centerTileY + tilesAlto /2 + 2);
+            // Render TMX
+            renderer.setView(camara);
+            renderer.render();
 
-        for (int y = startY; y < endY; y++) {
-            for (int x = startX; x < endX; x++) {
-                TextureRegion tr = mapa[y][x];
-                if (tr != null) {
-                    Render.batch.draw(tr, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                }
+
+            // Render entidades (jugador, etc.)
+            Render.batch.setProjectionMatrix(camara.combined);
+            Render.batch.begin();
+            manejo.render(Render.batch);
+            Render.batch.end();
+
+            // UI: Chat e Inventario
+            chat.actualizar(delta);
+            chat.render();
+
+            inventario.actualizar(delta);
+            inventario.render();
+
+            Render.batch.setProjectionMatrix(new com.badlogic.gdx.math.Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
+            Render.batch.begin();
+
+            minimapa.actualizar(delta, 0, 0);  // TargetX/Y dummy para minimapa
+            minimapa.render(Render.batch);
+            Render.batch.end();
+
+            // Input handling (igual que antes)
+            if (chat.isChatVisible()) {
+                chat.setInputProcessor();
+            } else if (inventario.isVisible()) {
+                inventario.setInputProcessor();
+            } else {
+                Gdx.input.setInputProcessor(manejo.getInputProcessor());
             }
         }
 
-        // Entidades / UI overlay
-        manejo.render(Render.batch);
-        Render.batch.end();
-
-        // Chat
-        chat.actualizar(delta);
-        chat.render();
-
-        // Inventario
-        inventario.actualizar(delta);
-        inventario.render();
-
-        if (chat.isChatVisible()) {
-            chat.setInputProcessor();
-        } if (!inventario.isVisible()) {
-            if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-                float x = Gdx.input.getX();
-                float y = Gdx.graphics.getHeight() - Gdx.input.getY();
-            }
-        }else {
-            Gdx.input.setInputProcessor(manejo.getInputProcessor());
-        }
-    }
 
     @Override
     public void resize(int width, int height) {
         camara.setToOrtho(false, width, height);
         camara.update();
         if (chat != null) chat.resize(width, height);
+        if (renderer != null) renderer.setView(camara);
         if (inventario != null) inventario.resize(width, height); // Nueva línea
     }
 
     @Override
     public void dispose() {
-        if (tileset != null) tileset.dispose();
+        if (tiledMap != null) tiledMap.dispose();
+        if (renderer != null) renderer.dispose();
         if (Render.batch != null) Render.batch.dispose();
         if (manejo != null) manejo.dispose();
         if (chat != null) chat.dispose();
-        if (inventario != null) inventario.dispose(); // Nueva línea
+        if (inventario != null) inventario.dispose();
+        if (minimapa != null) minimapa.dispose();
     }
+    public Mapa getMinimapa() { return minimapa; }
+
 }

@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 import java.util.HashMap;
 import java.lang.String;
+
+import pantalla.PantallaJuego;
 import utilidades.Chat;
 
 public class Mapa extends Objeto {
@@ -20,29 +22,33 @@ public class Mapa extends Objeto {
     private final float TAMANO_BOTON = 50f;
     private boolean bloqueoInput;
 
+    private PantallaJuego pantallaJuego;  // NUEVO: Referencia para callback
+
     public boolean isInputBloqueado() {
         return bloqueoInput;
     }
 
     private HashMap<String, Rectangle> regionesClickeables; // les añade direccion y lugar a las regiones
     private HashMap<String, String> regionAEscenario;   // les añade escenarios a las regiones
-    public Mapa() {
+
+    public Mapa() {  // NUEVO: Constructor modificado
         super("mapa.png", Gdx.graphics.getWidth() - 120, 70, 0.2f);
         this.mapaCompleto = new Texture("mapanuevo.png");
         this.botonCerrar = new Texture("botonCerrar.png"); // Necesitarás esta textura
         this.bounds = new Rectangle(getMapaX(), getMapaY(), getWidth(), getHeight()); // Ahora acepta floats
         this.boundsBotonCerrar = new Rectangle();
+        this.pantallaJuego = pantallaJuego;
         this.expandido = false;
 
         this.regionesClickeables = new HashMap<>();
         this.regionAEscenario = new HashMap<>();
 
-        aniadirRegionesClickeables("petshop", 95,205,80,80, "escenario_petshop");
-        aniadirRegionesClickeables("fuente", 270,170,60,80, "escenario_fuente");
-        aniadirRegionesClickeables("tienda", 215,75,70,60, "escenario_tienda");
-        aniadirRegionesClickeables("bosque", 400,95,130,130, "escenario_bosque");
-        aniadirRegionesClickeables("cueva", 20,355,100,80, "escenario_cueva");
 
+        aniadirRegionesClickeables("compras", 95,205,80,80, "compras");  // Ajusta nombres si quieres
+        aniadirRegionesClickeables("centro", 270,170,60,80, "centro");
+        aniadirRegionesClickeables("Eduactivo", 215,75,70,60, "Eduactivo");
+        aniadirRegionesClickeables("entretenimiento", 400,95,130,130, "entretenimiento");
+        aniadirRegionesClickeables("van", 20,355,100,80, "van");
     }
 
     private void aniadirRegionesClickeables(String nombreRegion, float x, float y, float largo, float alto, String nombreEscenario) {
@@ -67,6 +73,7 @@ public class Mapa extends Objeto {
                 float botonX = Gdx.graphics.getWidth() - TAMANO_BOTON - 20;
                 float botonY = 20;
                 boundsBotonCerrar.set(botonX, botonY, TAMANO_BOTON, TAMANO_BOTON);
+                chequearRegionesClickeadas(targetX, targetY);
 
                 if (Gdx.input.justTouched() && boundsBotonCerrar.contains(targetX, targetY)) {
                     toggleExpandido();
@@ -111,19 +118,21 @@ public class Mapa extends Objeto {
         for (String regionName : regionesClickeables.keySet()) {
             Rectangle region = regionesClickeables.get(regionName);
             if (region.contains(x, y)) {
-                String scenario = String.valueOf(regionesClickeables.get(regionName));
-                cambioEscenario(scenario);
+                String escenarioNuevo = regionAEscenario.get(regionName);  // Nombre del TMX sin .tmx
+                cambioEscenario(escenarioNuevo);
                 return;
             }
         }
     }
 
     private void cambioEscenario(String escenarioNuevo) {
-
         System.out.println("Changing to scenario: " + escenarioNuevo);
-
         toggleExpandido();
         bloqueoInput = true;
+        // NUEVO: Llamar al callback en PantallaJuego
+        if (pantallaJuego != null) {
+            pantallaJuego.cambiarEscenario(escenarioNuevo);
+        }
     }
 
     @Override

@@ -20,8 +20,8 @@ public class Colisiones {
     public Colisiones(int[][] tileTypes, int tileSize, int mapWidth, int mapHeight) {
         this.tileTypes = tileTypes;
         this.TILE_SIZE = tileSize;
-        this.MAP_WIDTH = mapWidth;
-        this.MAP_HEIGHT = mapHeight;
+        this.MAP_WIDTH = mapWidth * tileSize;
+        this.MAP_HEIGHT = mapHeight * tileSize;
     }
 
     /**
