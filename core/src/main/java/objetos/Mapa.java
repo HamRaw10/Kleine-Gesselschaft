@@ -114,17 +114,22 @@ public class Mapa extends Objeto {
         }
     }
 
-    private void chequearRegionesClickeadas(float x, float y) {
-        for (String regionName : regionesClickeables.keySet()) {
-            Rectangle region = regionesClickeables.get(regionName);
-            if (region.contains(x, y)) {
-                String escenarioNuevo = regionAEscenario.get(regionName);  // Nombre del TMX sin .tmx
-                cambioEscenario(escenarioNuevo);
-                return;
-            }
-        }
+    private void chequearRegionesClickeadas(float targetX, float targetY) {
     }
 
+    /*
+        private void chequearRegionesClickeadas(float x, float y) {
+            for (String regionName : regionesClickeables.keySet()) {
+                Rectangle region = regionesClickeables.get(regionName);
+                if (region.contains(x, y)) {
+                    String escenarioNuevo = regionAEscenario.get(regionName);  // Nombre del TMX sin .tmx
+                    cambioEscenario(escenarioNuevo);
+                    return;
+                }
+            }
+        }
+        */
+/*
     private void cambioEscenario(String escenarioNuevo) {
         System.out.println("Changing to scenario: " + escenarioNuevo);
         toggleExpandido();
@@ -134,7 +139,7 @@ public class Mapa extends Objeto {
             pantallaJuego.cambiarEscenario(escenarioNuevo);
         }
     }
-
+*/
     @Override
     public void render(SpriteBatch batch) {
         if (expandido || tiempoExpandido > 0) {

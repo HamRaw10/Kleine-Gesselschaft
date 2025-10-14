@@ -2,244 +2,181 @@ package pantalla;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+
+import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
-import com.badlogic.gdx.maps.MapObjects;
+import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
-import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
-import com.badlogic.gdx.math.MathUtils;
+
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+
 import controles.ControlDelJuego;
 import entidades.Jugador;
 import utilidades.Chat;
 import utilidades.Colisiones;
 import utilidades.Render;
 import utilidades.Inventario;
-import objetos.Mapa;  // Tu minimapa
+
 public class PantallaJuego extends ScreenAdapter {
 
+    private OrthographicCamera camara;
+    private Jugador jugador;
+
+    private TiledMap mapaTiled;
+    private OrthogonalTiledMapRenderer mapRenderer;
+
     private Colisiones colisiones;
-    public Jugador jugador;
     private ControlDelJuego manejo;
     private Chat chat;
-
     private Inventario inventario;
 
-    private Texture tileset;
-    private TextureRegion[][] mapa;
+    // Medidas del mapa leídas del TMX
+    private int MAP_WIDTH;   // en tiles
+    private int MAP_HEIGHT;  // en tiles
+    private int TILE_SIZE_W; // px
+    private int TILE_SIZE_H; // px
 
-    // ====== AJUSTE: tus tiles son 48x48 ======
-    private final int TILE_SIZE = 48;
-
-    // Tamaño del mundo en tiles
-    private final int MAP_WIDTH  = 240;
-    private final int MAP_HEIGHT = 160;
-
-
-    private TmxMapLoader mapLoader;
-    private TiledMap tiledMap;
-    private OrthogonalTiledMapRenderer renderer;
-    private Mapa minimapa;  // Referencia al minimapa para conectar cambios
-    private float mundoAncho, mundoAlto;
-
-    private OrthographicCamera camara;
-
-    // Mapeo de regiones del minimapa a archivos TMX (ajusta según tus necesidades)
-    private java.util.Map<String, String> regionToTmx = new java.util.HashMap<>();
-    {
-        regionToTmx.put("compras", "compras.tmx");
-        regionToTmx.put("centro", "centro.tmx");
-        regionToTmx.put("Eduactivo", "Eduactivo.tmx");
-        regionToTmx.put("entreteniemiento", "entretenimiento.tmx");
-        regionToTmx.put("van", "van.tmx");
-    }
+    // Si trabajás en “pixeles” como mundo, dejalo en 1f
+    private static final float UNIT_SCALE = 1f;
 
     public PantallaJuego(Game juego) {
-        // Cámara
         camara = new OrthographicCamera();
         camara.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        camara.position.set(0, 0, 0);
         camara.update();
 
         Render.batch = new SpriteBatch();
-        mapLoader = new TmxMapLoader(Gdx.files.internal(""));  // Ruta base para TMX en assets/
     }
 
     @Override
     public void show() {
+        // 1) Cargar el TMX (ruta pedida)
+        mapaTiled = new TmxMapLoader().load("exteriores/centro.tmx");
+        mapRenderer = new OrthogonalTiledMapRenderer(mapaTiled, UNIT_SCALE);
 
-        // Cargar mapa inicial (ej: centro.tmx)
-        cambiarEscenario("fuente");  // O el que quieras como default
-        // Inicializar colisiones con el TMX (se actualizará en cambiarEscenario)
-        colisiones = new Colisiones(null, 48, 0, 0);  // Inicial temporal; se actualiza después
-        // ControlDelJuego (pasa colisiones)
+        // 2) Propiedades del mapa
+        MapProperties props = mapaTiled.getProperties();
+        MAP_WIDTH   = props.get("width", Integer.class);
+        MAP_HEIGHT  = props.get("height", Integer.class);
+        TILE_SIZE_W = props.get("tilewidth", Integer.class);
+        TILE_SIZE_H = props.get("tileheight", Integer.class);
+
+        // 3) Construir matriz de colisiones desde capa de objetos "colision"
+        int[][] solids = new int[MAP_HEIGHT][MAP_WIDTH]; // 0 libre / 1 sólido
+
+        MapLayer capaColision = mapaTiled.getLayers().get("colision"); // <-- cambia el nombre si tu capa se llama distinto
+        if (capaColision != null) {
+            for (MapObject obj : capaColision.getObjects()) {
+                if (obj instanceof RectangleMapObject) {
+                    Rectangle r = ((RectangleMapObject) obj).getRectangle();
+
+                    int x0 = Math.max(0, (int) Math.floor(r.x / TILE_SIZE_W));
+                    int y0 = Math.max(0, (int) Math.floor(r.y / TILE_SIZE_H));
+                    int x1 = Math.min(MAP_WIDTH  - 1, (int) Math.floor((r.x + r.width)  / TILE_SIZE_W));
+                    int y1 = Math.min(MAP_HEIGHT - 1, (int) Math.floor((r.y + r.height) / TILE_SIZE_H));
+
+                    for (int y = y0; y <= y1; y++) {
+                        for (int x = x0; x <= x1; x++) {
+                            solids[y][x] = 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4) Instanciar Colisiones con la grilla derivada del TMX
+        int tileSizeParaFisica = Math.max(TILE_SIZE_W, TILE_SIZE_H);
+        // Usa la firma que tenga tu clase Colisiones:
+        //   a) Si tu constructor es (int[][], int, int, int):
+        colisiones = new Colisiones(solids, tileSizeParaFisica, MAP_WIDTH, MAP_HEIGHT);
+        //   b) Si te marca "Expected 3 arguments": cambia por la variante correcta que tengas, p.e.:
+        // colisiones = new Colisiones(solids, tileSizeParaFisica, MAP_WIDTH); // <-- solo si tu clase lo pide
+
+        // 5) Control del juego (personaje se mantiene)
         manejo = new ControlDelJuego(colisiones);
         manejo.setCamera(camara);
-        // Minimapa (agrega referencia a esta pantalla para callbacks)
-        minimapa = new Mapa(this);  // Modificaremos Mapa para aceptar PantallaJuego
+
+        // 6) UI
         Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
         chat = new Chat(skin, manejo.getJugador());
-        inventario = new Inventario(skin, chat, manejo.getJugador());
+        inventario = new Inventario(skin, chat, jugador);
     }
 
-
-    public void cambiarEscenario(String nombreRegion) {
-        String tmxFile = regionToTmx.get(nombreRegion);
-        if (tmxFile == null) {
-            Gdx.app.log("PantallaJuego", "TMX no encontrado para región: " + nombreRegion);
-            return;
-        }
-
-        // Cargar TMX
-        tiledMap = mapLoader.load(tmxFile);
-        if (renderer != null) renderer.dispose();
-        renderer = new OrthogonalTiledMapRenderer(tiledMap, 1f / 48f, Render.batch);  // Escala si tiles son 48x48
-        // Tamaño del mundo (de la capa principal)
-        TiledMapTileLayer layer = (TiledMapTileLayer) tiledMap.getLayers().get(0);
-        mundoAncho = layer.getWidth() * 48;  // Asume tile size 48; ajusta si es diferente
-        mundoAlto = layer.getHeight() * 48;
-        // Configurar colisiones desde TMX (actualizar Colisiones)
-        actualizarColisionesDesdeTMX();
-
-        // Spawn del jugador (busca objeto "PlayerSpawn" en capa "Objects")
-        Vector2 spawn = encontrarSpawnPoint();
-        if (spawn != null) {
-            jugador = manejo.getJugador();
-            jugador.setPersonajeX(spawn.x);
-            jugador.setPersonajeY(spawn.y);
-        }
-        // Actualizar cámara bounds
-        camara.update();
-        Gdx.app.log("PantallaJuego", "Cambiado a escenario: " + tmxFile);
-    }
-
-
-    private void actualizarColisionesDesdeTMX() {
-        // Extraer matriz de colisiones de capa "Colisiones" (tiles con property "collidable=true")
-        TiledMapTileLayer colLayer = (TiledMapTileLayer) tiledMap.getLayers().get("Colisiones");
-        if (colLayer == null) {
-            colLayer = (TiledMapTileLayer) tiledMap.getLayers().get(0);  // Fallback a primera capa
-        }
-        int width = colLayer.getWidth();
-        int height = colLayer.getHeight();
-        int[][] tileTypes = new int[height][width];
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                var cell = colLayer.getCell(x, y);
-                tileTypes[y][x] = (cell != null && cell.getTile() != null &&
-                    cell.getTile().getProperties().containsKey("collidable") &&
-                    (Boolean) cell.getTile().getProperties().get("collidable")) ? 1 : 0;
-            }
-        }
-
-        colisiones = new Colisiones(tileTypes, 48, width, height);  // Tile size 48; ajusta
-        manejo.setColisiones(colisiones);  // Agrega setter en ControlDelJuego si no existe
-    }
-
-
-    private Vector2 encontrarSpawnPoint() {
-        MapObjects objects = tiledMap.getLayers().get("Objects").getObjects();  // Capa "Objects"
-        for (MapObject obj : objects) {
-            if (obj instanceof RectangleMapObject && "PlayerSpawn".equals(obj.getName())) {
-                Rectangle rect = ((RectangleMapObject) obj).getRectangle();
-                return new Vector2(rect.x, rect.y);
-            }
-        }
-        // Fallback si no hay spawn
-        return new Vector2(100, 100);
-    }
-
-
-
-
-        @Override
+    @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClearColor(0, 0, 0, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        // Actualizar lógica del jugador
         manejo.actualizar(delta);
 
-        // Seguir al jugador
-        float jugadorX = manejo.getJugador().getPersonajeX() + (TILE_SIZE / 2f);
-        float jugadorY = manejo.getJugador().getPersonajeY() + (TILE_SIZE / 2f);
+        // Seguir cámara al jugador (coordenadas en píxeles)
+        float jugadorX = manejo.getJugador().getPersonajeX();
+        float jugadorY = manejo.getJugador().getPersonajeY();
         camara.position.set(jugadorX, jugadorY, 0);
 
-        // Clamp cámara al mundo usando el TILE_SIZE correcto (48)
+        // Clamp de cámara al tamaño real del mapa en píxeles
+        float worldWidth  = MAP_WIDTH  * TILE_SIZE_W * UNIT_SCALE;
+        float worldHeight = MAP_HEIGHT * TILE_SIZE_H * UNIT_SCALE;
+
         float minX = camara.viewportWidth  / 2f;
-        float maxX = MAP_WIDTH  * TILE_SIZE - camara.viewportWidth  / 2f;
+        float maxX = worldWidth  - camara.viewportWidth  / 2f;
         float minY = camara.viewportHeight / 2f;
-        float maxY = MAP_HEIGHT * TILE_SIZE - camara.viewportHeight / 2f;
-        camara.position.x = MathUtils.clamp(camara.position.x, minX, maxX);
-        camara.position.y = MathUtils.clamp(camara.position.y, minY, maxY);
+        float maxY = worldHeight - camara.viewportHeight / 2f;
+
+        camara.position.x = MathUtils.clamp(camara.position.x, minX, Math.max(minX, maxX));
+        camara.position.y = MathUtils.clamp(camara.position.y, minY, Math.max(minY, maxY));
         camara.update();
 
+        // === Render del mapa ===
+        mapRenderer.setView(camara);
+        mapRenderer.render(); // renderiza todas las capas
 
-            // Render TMX
-            renderer.setView(camara);
-            renderer.render();
+        // === Render del personaje y HUD ===
+        Render.batch.setProjectionMatrix(camara.combined);
+        Render.batch.begin();
+        manejo.render(Render.batch); // personaje / entidades
+        Render.batch.end();
 
+        // UI
+        chat.actualizar(delta);
+        chat.render();
 
-            // Render entidades (jugador, etc.)
-            Render.batch.setProjectionMatrix(camara.combined);
-            Render.batch.begin();
-            manejo.render(Render.batch);
-            Render.batch.end();
+        inventario.actualizar(delta);
+        inventario.render();
 
-            // UI: Chat e Inventario
-            chat.actualizar(delta);
-            chat.render();
-
-            inventario.actualizar(delta);
-            inventario.render();
-
-            Render.batch.setProjectionMatrix(new com.badlogic.gdx.math.Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
-            Render.batch.begin();
-
-            minimapa.actualizar(delta, 0, 0);  // TargetX/Y dummy para minimapa
-            minimapa.render(Render.batch);
-            Render.batch.end();
-
-            // Input handling (igual que antes)
-            if (chat.isChatVisible()) {
-                chat.setInputProcessor();
-            } else if (inventario.isVisible()) {
-                inventario.setInputProcessor();
-            } else {
-                Gdx.input.setInputProcessor(manejo.getInputProcessor());
-            }
+        if (chat.isChatVisible()) {
+            chat.setInputProcessor();
+        } else if (inventario.isVisible()) {
+            inventario.setInputProcessor();
+        } else {
+            Gdx.input.setInputProcessor(manejo.getInputProcessor());
         }
-
+    }
 
     @Override
     public void resize(int width, int height) {
         camara.setToOrtho(false, width, height);
         camara.update();
         if (chat != null) chat.resize(width, height);
-        if (renderer != null) renderer.setView(camara);
-        if (inventario != null) inventario.resize(width, height); // Nueva línea
+        if (inventario != null) inventario.resize(width, height);
     }
 
     @Override
     public void dispose() {
-        if (tiledMap != null) tiledMap.dispose();
-        if (renderer != null) renderer.dispose();
+        if (mapRenderer != null) mapRenderer.dispose();
+        if (mapaTiled != null) mapaTiled.dispose();
         if (Render.batch != null) Render.batch.dispose();
         if (manejo != null) manejo.dispose();
         if (chat != null) chat.dispose();
         if (inventario != null) inventario.dispose();
-        if (minimapa != null) minimapa.dispose();
     }
-    public Mapa getMinimapa() { return minimapa; }
-
 }
