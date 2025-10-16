@@ -26,9 +26,11 @@ import utilidades.Colisiones;
 import utilidades.Render;
 import utilidades.Inventario;
 
+
 public class PantallaJuego extends ScreenAdapter {
 
     private OrthographicCamera camara;
+
     private Jugador jugador;
 
     private TiledMap mapaTiled;
@@ -58,7 +60,7 @@ public class PantallaJuego extends ScreenAdapter {
 
     @Override
     public void show() {
-        // 1) Cargar el TMX (ruta pedida)
+        // 1) Cargar mapa y renderer
         mapaTiled = new TmxMapLoader().load("exteriores/centro.tmx");
         mapRenderer = new OrthogonalTiledMapRenderer(mapaTiled, UNIT_SCALE);
 
@@ -69,46 +71,20 @@ public class PantallaJuego extends ScreenAdapter {
         TILE_SIZE_W = props.get("tilewidth", Integer.class);
         TILE_SIZE_H = props.get("tileheight", Integer.class);
 
-        // 3) Construir matriz de colisiones desde capa de objetos "colision"
-        int[][] solids = new int[MAP_HEIGHT][MAP_WIDTH]; // 0 libre / 1 sólido
+        // 🔁 3) Cargar colisiones desde la Object Layer "colisiones" (¡ojo nombre!)
+        colisiones = new Colisiones();
+        colisiones.cargarDesdeMapa(mapaTiled, "colisiones", UNIT_SCALE);
 
-        MapLayer capaColision = mapaTiled.getLayers().get("colision"); // <-- cambia el nombre si tu capa se llama distinto
-        if (capaColision != null) {
-            for (MapObject obj : capaColision.getObjects()) {
-                if (obj instanceof RectangleMapObject) {
-                    Rectangle r = ((RectangleMapObject) obj).getRectangle();
 
-                    int x0 = Math.max(0, (int) Math.floor(r.x / TILE_SIZE_W));
-                    int y0 = Math.max(0, (int) Math.floor(r.y / TILE_SIZE_H));
-                    int x1 = Math.min(MAP_WIDTH  - 1, (int) Math.floor((r.x + r.width)  / TILE_SIZE_W));
-                    int y1 = Math.min(MAP_HEIGHT - 1, (int) Math.floor((r.y + r.height) / TILE_SIZE_H));
-
-                    for (int y = y0; y <= y1; y++) {
-                        for (int x = x0; x <= x1; x++) {
-                            solids[y][x] = 1;
-                        }
-                    }
-                }
-            }
-        }
-
-        // 4) Instanciar Colisiones con la grilla derivada del TMX
-        int tileSizeParaFisica = Math.max(TILE_SIZE_W, TILE_SIZE_H);
-        // Usa la firma que tenga tu clase Colisiones:
-        //   a) Si tu constructor es (int[][], int, int, int):
-        colisiones = new Colisiones(solids, tileSizeParaFisica, MAP_WIDTH, MAP_HEIGHT);
-        //   b) Si te marca "Expected 3 arguments": cambia por la variante correcta que tengas, p.e.:
-        // colisiones = new Colisiones(solids, tileSizeParaFisica, MAP_WIDTH); // <-- solo si tu clase lo pide
-
-        // 5) Control del juego (personaje se mantiene)
+        // 4) Resto igual
         manejo = new ControlDelJuego(colisiones);
         manejo.setCamera(camara);
 
-        // 6) UI
         Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
         chat = new Chat(skin, manejo.getJugador());
         inventario = new Inventario(skin, chat, jugador);
     }
+
 
     @Override
     public void render(float delta) {
