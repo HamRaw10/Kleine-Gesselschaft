@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.audio.Music;
 
 import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
@@ -40,6 +41,7 @@ public class PantallaJuego extends ScreenAdapter {
     private ControlDelJuego manejo;
     private Chat chat;
     private Inventario inventario;
+    private Music musicaFondo;
 
     // Medidas del mapa leídas del TMX
     private int MAP_WIDTH;   // en tiles
@@ -83,6 +85,10 @@ public class PantallaJuego extends ScreenAdapter {
         Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
         chat = new Chat(skin, manejo.getJugador());
         inventario = new Inventario(skin, chat, jugador);
+        musicaFondo = Gdx.audio.newMusic(Gdx.files.internal("assets/musica1.mp3"));
+        musicaFondo.setLooping(true);
+        musicaFondo.setVolume(0.5f);
+        musicaFondo.play();
     }
 
 
@@ -154,5 +160,9 @@ public class PantallaJuego extends ScreenAdapter {
         if (manejo != null) manejo.dispose();
         if (chat != null) chat.dispose();
         if (inventario != null) inventario.dispose();
+        if (musicaFondo != null) {
+            musicaFondo.dispose();
+        }
+
     }
 }
