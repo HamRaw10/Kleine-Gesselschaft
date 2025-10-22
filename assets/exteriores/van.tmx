@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="20" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="2">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="20" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="7">
  <tileset firstgid="1" source="../tsx/tiles.tsx"/>
  <tileset firstgid="3016" source="../tsx/buildings_all.tsx"/>
  <layer id="1" name="Tile Layer 1" width="20" height="20">
@@ -52,5 +52,25 @@
  </layer>
  <objectgroup id="3" name="colisiones">
   <object id="1" x="112" y="64" width="96" height="64"/>
+ </objectgroup>
+ <objectgroup id="4" name="interacciones">
+  <object id="2" x="0" y="128" width="16" height="96">
+   <properties>
+    <property name="spawnX" type="float" value="160"/>
+    <property name="spawnY" type="float" value="64"/>
+    <property name="targetMap" value="exteriores/van.tmx"/>
+    <property name="tipo" value="portal"/>
+    <property name="transicion" value="fade"/>
+   </properties>
+  </object>
+  <object id="4" x="304" y="128" width="16" height="96">
+   <properties>
+    <property name="spawnX" type="float" value="0"/>
+    <property name="spawnY" type="float" value="0"/>
+    <property name="targetMap" value=""/>
+    <property name="tipo" value=""/>
+    <property name="transicion" value="fade"/>
+   </properties>
+  </object>
  </objectgroup>
 </map>
