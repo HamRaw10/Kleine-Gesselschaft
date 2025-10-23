@@ -22,6 +22,9 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 
 import java.util.Iterator;
 import java.lang.reflect.Method;
@@ -61,6 +64,10 @@ public class PantallaJuego extends ScreenAdapter {
     private Chat chat;
     private Inventario inventario;
     private Music musicaFondo;
+    private Stage hud;          // HUD para dibujar textos/íconos
+    private Label lblMonedas;   // etiqueta de monedas
+    private Skin skinUI;        // reutilizamos el uiskin.json si existe
+    private boolean dineroInicializado = false; // para setear los 50 una sola vez
 
     // ===== Fade / transición =====
     private enum TransitionState { NONE, FADING_OUT, SWITCHING, FADING_IN }
@@ -265,6 +272,19 @@ public class PantallaJuego extends ScreenAdapter {
             }
         }
 
+        // ⬇️ Crear HUD (después de configurar cámaras/viewport)
+        hud = new Stage(new ScreenViewport());
+// Si tenés skinUI, usamos ese, si no, creamos un Label “fallback” sin skin
+        if (skinUI != null) {
+            lblMonedas = new Label("Monedas: 0", skinUI);
+        } else {
+            // fallback simple si faltara uiskin.json
+            lblMonedas = new Label("Monedas: 0", new Skin(Gdx.files.internal("uiskin.json")));
+        }
+        lblMonedas.setPosition(10, Gdx.graphics.getHeight() - 30); // esquina sup. izquierda
+        hud.addActor(lblMonedas);
+
+
         if (Gdx.files.internal("musica1.mp3").exists()) {
             musicaFondo = Gdx.audio.newMusic(Gdx.files.internal("musica1.mp3"));
             musicaFondo.setLooping(true);
@@ -397,6 +417,19 @@ public class PantallaJuego extends ScreenAdapter {
                 inventario = new Inventario(skin, chat, jugador);
             }
         }
+        // Inicializar monedas a 50 una sola vez
+        if (jugador != null && !dineroInicializado) {
+            try {
+                // Si usás la clase Moneda que te pasé:
+                if (jugador.getDinero().getCantidad() == 0) {
+                    jugador.getDinero().setCantidad(50);
+                }
+            } catch (Exception ignored) {
+                // Si aún no integraste Moneda, no pasa nada
+            }
+            dineroInicializado = true;
+        }
+
         if (jugador != null && !spawnInicialHecho && mapaTiled != null) {
             float worldW = MAP_WIDTH  * TILE_SIZE_W * UNIT_SCALE;
             float worldH = MAP_HEIGHT * TILE_SIZE_H * UNIT_SCALE;
@@ -459,6 +492,15 @@ public class PantallaJuego extends ScreenAdapter {
         } else {
             Gdx.input.setInputProcessor(manejo.getInputProcessor());
         }
+        // === HUD de monedas ===
+        if (jugador != null && lblMonedas != null) {
+            lblMonedas.setText("Monedas: " + jugador.getDinero().getCantidad());
+        }
+        if (hud != null) {
+            hud.act(delta);
+            hud.draw();
+        }
+
 
         // Clicks en portales solo cuando no estamos en fade-out
         if (transitionState == TransitionState.NONE) procesarClickPortalesSiCorresponde();
@@ -493,6 +535,10 @@ public class PantallaJuego extends ScreenAdapter {
 
         if (chat != null) chat.resize(width, height);
         if (inventario != null) inventario.resize(width, height);
+        if (hud != null) {
+            hud.getViewport().update(width, height, true);
+        }
+
     }
 
     @Override
@@ -504,6 +550,9 @@ public class PantallaJuego extends ScreenAdapter {
         if (inventario != null) inventario.dispose();
         if (musicaFondo != null) musicaFondo.dispose();
         if (shape != null) shape.dispose();
+        if (hud != null) hud.dispose();
+// No disposear skinUI acá si lo usan Chat/Inventario (ellos ya hacen su dispose).
+
         // ¡No disponer Render.batch si lo usan otras pantallas!
     }
 

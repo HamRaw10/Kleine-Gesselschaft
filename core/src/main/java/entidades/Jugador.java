@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Rectangle;
 
 import utilidades.Animacion;
 import utilidades.Colisiones;
+import utilidades.Moneda;   // ⬅️ NUEVO
 
 public class Jugador extends Personaje {
 
@@ -33,11 +34,21 @@ public class Jugador extends Personaje {
 
     private Direccion direccionActual = Direccion.ABAJO;
 
+    // ⬇️ NUEVO: dinero del jugador
+    private final Moneda dinero;
+
     private enum Direccion { ARRIBA, ABAJO, DERECHA, IZQUIERDA }
 
+    // Constructor clásico -> inicia con 0 monedas
     public Jugador(Colisiones colisiones) {
+        this(colisiones, 0);
+    }
+
+    // ⬇️ NUEVO: constructor con monedas iniciales
+    public Jugador(Colisiones colisiones, int monedasIniciales) {
         super("char_a_p1/adelante/001.png", 300, 150, 1f);
         this.colisiones = colisiones;
+        this.dinero = new Moneda(monedasIniciales);
 
         // Si tu Personaje tiene getWidth()/getHeight(), usalos:
         float spriteW = getWidth();
@@ -55,6 +66,11 @@ public class Jugador extends Personaje {
         this.animacionDerecha   = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/derecha",  6, 0.08f);
         this.animacionIzquierda = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/izquierda",6, 0.08f);
     }
+
+    // === DINERO (helpers) ===
+    public Moneda getDinero() { return dinero; }
+    public void ganarMonedas(int cant) { dinero.sumar(cant); }
+    public boolean gastarMonedas(int costo) { return dinero.restar(costo); }
 
     // === HITBOX ===
     public Rectangle getHitbox() { return hitbox; }
@@ -76,7 +92,6 @@ public class Jugador extends Personaje {
             personajeX += dx;
             syncHitbox();
             if (colisiones.colisiona(hitbox)) {
-                // revertir X
                 personajeX = oldX;
                 syncHitbox();
                 dx = 0f;
@@ -87,7 +102,6 @@ public class Jugador extends Personaje {
             personajeY += dy;
             syncHitbox();
             if (colisiones.colisiona(hitbox)) {
-                // revertir Y
                 personajeY = oldY;
                 syncHitbox();
                 dy = 0f;
@@ -110,7 +124,6 @@ public class Jugador extends Personaje {
     public void actualizar(float delta, float targetX, float targetY) {
         if (bloqueado) { velocidadX = 0; velocidadY = 0; return; }
 
-        // Centro “cuerpo” para apuntar hacia target (ajustá si preferís usar hitbox centro)
         float cx = personajeX + getWidth()  * 0.5f;
         float cy = personajeY + getHeight() * 0.3f;
 
