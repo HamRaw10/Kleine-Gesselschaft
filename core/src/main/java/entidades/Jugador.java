@@ -37,7 +37,7 @@ public class Jugador extends Personaje {
     // ⬇️ NUEVO: dinero del jugador
     private final Moneda dinero;
 
-    private enum Direccion { ARRIBA, ABAJO, DERECHA, IZQUIERDA }
+    private enum Direccion {ARRIBA, ABAJO, DERECHA, IZQUIERDA}
 
     // Constructor clásico -> inicia con 0 monedas
     public Jugador(Colisiones colisiones) {
@@ -60,20 +60,30 @@ public class Jugador extends Personaje {
 
         this.hitbox = new Rectangle(personajeX + hitOffsetX, personajeY + hitOffsetY, hitW, hitH);
 
-        this.animacionIdle      = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/adelante", 5, 0.2f);
-        this.animacionAdelante  = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/adelante", 6, 0.08f);
-        this.animacionAtras     = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/atras",    6, 0.08f);
-        this.animacionDerecha   = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/derecha",  6, 0.08f);
-        this.animacionIzquierda = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/izquierda",6, 0.08f);
+        this.animacionIdle = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/adelante", 5, 0.2f);
+        this.animacionAdelante = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/adelante", 6, 0.08f);
+        this.animacionAtras = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/atras", 6, 0.08f);
+        this.animacionDerecha = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/derecha", 6, 0.08f);
+        this.animacionIzquierda = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/izquierda", 6, 0.08f);
     }
 
     // === DINERO (helpers) ===
-    public Moneda getDinero() { return dinero; }
-    public void ganarMonedas(int cant) { dinero.sumar(cant); }
-    public boolean gastarMonedas(int costo) { return dinero.restar(costo); }
+    public Moneda getDinero() {
+        return dinero;
+    }
+
+    public void ganarMonedas(int cant) {
+        dinero.sumar(cant);
+    }
+
+    public boolean gastarMonedas(int costo) {
+        return dinero.restar(costo);
+    }
 
     // === HITBOX ===
-    public Rectangle getHitbox() { return hitbox; }
+    public Rectangle getHitbox() {
+        return hitbox;
+    }
 
     private void syncHitbox() {
         hitbox.setPosition(personajeX + hitOffsetX, personajeY + hitOffsetY);
@@ -111,8 +121,13 @@ public class Jugador extends Personaje {
         velocidadY = dy;
     }
 
-    public float getVelPx() { return velPx; }
-    public void setVelPx(float v) { velPx = v; }
+    public float getVelPx() {
+        return velPx;
+    }
+
+    public void setVelPx(float v) {
+        velPx = v;
+    }
 
     public void cancelarMovimiento() {
         velocidadX = 0f;
@@ -122,18 +137,23 @@ public class Jugador extends Personaje {
 
     @Override
     public void actualizar(float delta, float targetX, float targetY) {
-        if (bloqueado) { velocidadX = 0; velocidadY = 0; return; }
+        if (bloqueado) {
+            velocidadX = 0;
+            velocidadY = 0;
+            return;
+        }
 
-        float cx = personajeX + getWidth()  * 0.5f;
+        float cx = personajeX + getWidth() * 0.5f;
         float cy = personajeY + getHeight() * 0.3f;
 
         float dx = targetX - cx;
         float dy = targetY - cy;
-        float len = (float)Math.sqrt(dx*dx + dy*dy);
+        float len = (float) Math.sqrt(dx * dx + dy * dy);
 
         float movX = 0, movY = 0;
         if (len > 1f) {
-            dx /= len; dy /= len;
+            dx /= len;
+            dy /= len;
             movX = dx * velPx * delta;
             movY = dy * velPx * delta;
 
@@ -157,16 +177,27 @@ public class Jugador extends Personaje {
             frame = animacionIdle.getKeyFrame(tiempoAnimacion, true);
         } else {
             switch (direccionActual) {
-                case ARRIBA:    frame = animacionAtras.getKeyFrame(tiempoAnimacion, true);      break;
-                case ABAJO:     frame = animacionAdelante.getKeyFrame(tiempoAnimacion, true);   break;
-                case DERECHA:   frame = animacionDerecha.getKeyFrame(tiempoAnimacion, true);    break;
-                case IZQUIERDA: frame = animacionIzquierda.getKeyFrame(tiempoAnimacion, true);  break;
-                default:        frame = animacionIdle.getKeyFrame(tiempoAnimacion, true);
+                case ARRIBA:
+                    frame = animacionAtras.getKeyFrame(tiempoAnimacion, true);
+                    break;
+                case ABAJO:
+                    frame = animacionAdelante.getKeyFrame(tiempoAnimacion, true);
+                    break;
+                case DERECHA:
+                    frame = animacionDerecha.getKeyFrame(tiempoAnimacion, true);
+                    break;
+                case IZQUIERDA:
+                    frame = animacionIzquierda.getKeyFrame(tiempoAnimacion, true);
+                    break;
+                default:
+                    frame = animacionIdle.getKeyFrame(tiempoAnimacion, true);
             }
         }
-
-        batch.draw(frame, getPersonajeX(), getPersonajeY(), getWidth(), getHeight());
+        float w = getWidth() * escala;
+        float h = getHeight() * escala;
+        batch.draw(frame, getPersonajeX(), getPersonajeY(), w, h);
     }
+
 
     public void setBloqueado(boolean b) {
         bloqueado = b;

@@ -320,6 +320,23 @@ public class PantallaJuego extends ScreenAdapter {
 
         cargarMapaPorRuta(canon);
 
+        boolean esInterior = canon.toLowerCase().contains("arcade") ||
+            canon.toLowerCase().contains("tienda") ||
+            canon.toLowerCase().contains("casa") ||
+            canon.toLowerCase().contains("shop") ||
+            canon.toLowerCase().contains("toy"); // ajustá según tus nombres
+
+        if (jugador != null) {
+            jugador.cancelarMovimiento();
+            jugador.setPos(pendingSpawnX, pendingSpawnY);
+            jugador.setEscala(esInterior ? 0.7f : 1f); // 👈 cambia tamaño solo adentro
+        }
+
+        camara.position.set(pendingSpawnX, pendingSpawnY, 0f);
+        camara.update();
+
+        transitionState = TransitionState.FADING_IN;
+
         // clamping del spawn y centrado estético en Y
         float worldW = MAP_WIDTH  * TILE_SIZE_W * UNIT_SCALE;
         float worldH = MAP_HEIGHT * TILE_SIZE_H * UNIT_SCALE;

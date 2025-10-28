@@ -14,7 +14,7 @@ public abstract class Personaje {
     protected float personajeY;
     protected float velocidad;//Variable creada, la cual va a almacenar la velocidad en la que se mueva el ciruclo
     protected Texture texture;
-    protected float escala;
+    protected float escala = 1f;
     protected float ancho;
     protected float largo;
     protected float velocidadX;
@@ -40,6 +40,9 @@ public abstract class Personaje {
         );
     }
 
+    public void setEscala(float escala) {
+        this.escala = escala;
+    }
     protected void actualizarPosicion(float newX, float newY) {
         this.personajeX = newX;
         this.personajeY = newY;
