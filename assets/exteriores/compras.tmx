@@ -153,7 +153,7 @@
    <properties>
     <property name="spawnX" type="float" value="160"/>
     <property name="spawnY" type="float" value="64"/>
-    <property name="targetMap" value="interiores/arcade.tmx"/>
+    <property name="targetMap" value="interiores/supermercado.tmx"/>
     <property name="tipo" value="portal"/>
     <property name="transicion" value="fade"/>
    </properties>
@@ -162,7 +162,7 @@
    <properties>
     <property name="spawnX" type="float" value="160"/>
     <property name="spawnY" type="float" value="64"/>
-    <property name="targetMap" value="interiores/arcade.tmx"/>
+    <property name="targetMap" value="interiores/hippie_house.tmx"/>
     <property name="tipo" value="portal"/>
     <property name="transicion" value="fade"/>
    </properties>
@@ -171,7 +171,7 @@
    <properties>
     <property name="spawnX" type="float" value="160"/>
     <property name="spawnY" type="float" value="64"/>
-    <property name="targetMap" value="interiores/arcade.tmx"/>
+    <property name="targetMap" value="interiores/herramientas.tmx"/>
     <property name="tipo" value="portal"/>
     <property name="transicion" value="fade"/>
    </properties>

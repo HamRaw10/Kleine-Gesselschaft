@@ -321,15 +321,21 @@ public class PantallaJuego extends ScreenAdapter {
         cargarMapaPorRuta(canon);
 
         boolean esInterior = canon.toLowerCase().contains("arcade") ||
-            canon.toLowerCase().contains("tienda") ||
-            canon.toLowerCase().contains("casa") ||
-            canon.toLowerCase().contains("shop") ||
-            canon.toLowerCase().contains("toy"); // ajustá según tus nombres
+            canon.toLowerCase().contains("bibloteca") ||
+            canon.toLowerCase().contains("cine") ||
+            canon.toLowerCase().contains("coffeShop") ||
+            canon.toLowerCase().contains("communityCenter") ||
+            canon.toLowerCase().contains("herramientas") ||
+            canon.toLowerCase().contains("hippie_house") ||
+            canon.toLowerCase().contains("pub") ||
+            canon.toLowerCase().contains("cine") ||
+            canon.toLowerCase().contains("supermercado");
+
 
         if (jugador != null) {
             jugador.cancelarMovimiento();
             jugador.setPos(pendingSpawnX, pendingSpawnY);
-            jugador.setEscala(esInterior ? 0.7f : 1f); // 👈 cambia tamaño solo adentro
+            jugador.setEscala(esInterior ? 0.7f : 1f); // cambia tamaño solo adentro
         }
 
         camara.position.set(pendingSpawnX, pendingSpawnY, 0f);

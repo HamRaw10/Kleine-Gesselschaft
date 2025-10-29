@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="15" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="1">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="15" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="20">
  <tileset firstgid="1" source="../tsx/interior.tsx"/>
  <layer id="2" name="PardesYPisos" width="15" height="15">
   <data encoding="csv">
@@ -96,4 +96,31 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
+ <objectgroup id="6" name="colisiones">
+  <object id="3" x="16" y="128" width="224" height="16"/>
+  <object id="4" x="0" y="0" width="16" height="240"/>
+  <object id="5" x="0" y="0" width="240" height="16"/>
+  <object id="6" x="160" y="0" width="80" height="64"/>
+  <object id="7" x="16" y="16" width="144" height="48"/>
+  <object id="8" x="160" y="64" width="80" height="48"/>
+  <object id="9" x="176" y="160" width="32" height="16"/>
+  <object id="10" x="160" y="176" width="16" height="16"/>
+  <object id="11" x="176" y="192" width="32" height="16"/>
+  <object id="12" x="208" y="176" width="16" height="16"/>
+  <object id="13" x="176" y="176" width="32" height="16"/>
+  <object id="14" x="48" y="192" width="32" height="16"/>
+  <object id="15" x="32" y="192" width="16" height="16"/>
+  <object id="16" x="80" y="192" width="16" height="16"/>
+ </objectgroup>
+ <objectgroup id="7" name="interacciones">
+  <object id="17" x="176" y="224" width="48" height="16">
+   <properties>
+    <property name="spawnX" type="float" value="160"/>
+    <property name="spawnY" type="float" value="64"/>
+    <property name="targetMap" value="exteriores/centro.tmx"/>
+    <property name="tipo" value="portal"/>
+    <property name="transicion" value="fade"/>
+   </properties>
+  </object>
+ </objectgroup>
 </map>

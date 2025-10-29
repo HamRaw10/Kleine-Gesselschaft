@@ -144,8 +144,8 @@
   </object>
   <object id="21" x="128" y="176" width="32" height="16">
    <properties>
-    <property name="spawnX" type="float" value="160"/>
-    <property name="spawnY" type="float" value="64"/>
+    <property name="spawnX" type="float" value="30"/>
+    <property name="spawnY" type="float" value="40"/>
     <property name="targetMap" value="interiores/arcade.tmx"/>
     <property name="tipo" value="portal"/>
     <property name="transicion" value="fade"/>
@@ -155,7 +155,7 @@
    <properties>
     <property name="spawnX" type="float" value="160"/>
     <property name="spawnY" type="float" value="64"/>
-    <property name="targetMap" value="interiores/arcade.tmx"/>
+    <property name="targetMap" value="interiores/cine.tmx"/>
     <property name="tipo" value="portal"/>
     <property name="transicion" value="fade"/>
    </properties>
@@ -164,7 +164,7 @@
    <properties>
     <property name="spawnX" type="float" value="160"/>
     <property name="spawnY" type="float" value="64"/>
-    <property name="targetMap" value="interiores/arcade.tmx"/>
+    <property name="targetMap" value="interiores/pub.tmx"/>
     <property name="tipo" value="portal"/>
     <property name="transicion" value="fade"/>
    </properties>
