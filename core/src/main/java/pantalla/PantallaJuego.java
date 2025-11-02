@@ -36,12 +36,14 @@ import utilidades.Colisiones;
 import utilidades.Inventario;
 import utilidades.Portal;
 import utilidades.Render;
+import utilidades.DebugOverlay;
 
 public class PantallaJuego extends ScreenAdapter {
 
     // ===== Cámara / Viewport =====
     private OrthographicCamera camara;
     private ScreenViewport screenViewport;
+    private DebugOverlay debugOverlay;
     private OrthographicCamera uiCamera; // para overlays a pantalla
 
     // ===== Mapas =====
@@ -251,6 +253,7 @@ public class PantallaJuego extends ScreenAdapter {
     // ===== Ciclo de vida =====
     @Override
     public void show() {
+        debugOverlay = new DebugOverlay();
         cargarMapaPorRuta(MAPA_INICIAL);
 
         // Cámara centrada
@@ -323,12 +326,11 @@ public class PantallaJuego extends ScreenAdapter {
         boolean esInterior = canon.toLowerCase().contains("arcade") ||
             canon.toLowerCase().contains("bibloteca") ||
             canon.toLowerCase().contains("cine") ||
-            canon.toLowerCase().contains("coffeShop") ||
-            canon.toLowerCase().contains("communityCenter") ||
+            canon.toLowerCase().contains("coffeshop") ||
+            canon.toLowerCase().contains("communitycenter") ||
             canon.toLowerCase().contains("herramientas") ||
             canon.toLowerCase().contains("hippie_house") ||
             canon.toLowerCase().contains("pub") ||
-            canon.toLowerCase().contains("cine") ||
             canon.toLowerCase().contains("supermercado");
 
 
@@ -524,6 +526,20 @@ public class PantallaJuego extends ScreenAdapter {
             hud.draw();
         }
 
+        debugOverlay.pollToggleKey();
+
+        debugOverlay.render(
+            shape,
+            Render.batch,
+            jugador,
+            colisiones,
+            camara,
+            uiCamera,
+            TILE_SIZE_W,
+            TILE_SIZE_H,
+            mapaActualPath // puedes pasar null si no querés mostrarlo
+        );
+
 
         // Clicks en portales solo cuando no estamos en fade-out
         if (transitionState == TransitionState.NONE) procesarClickPortalesSiCorresponde();
@@ -542,6 +558,8 @@ public class PantallaJuego extends ScreenAdapter {
 
             Gdx.gl.glDisable(GL20.GL_BLEND);
         }
+
+
     }
 
     @Override
@@ -574,12 +592,10 @@ public class PantallaJuego extends ScreenAdapter {
         if (musicaFondo != null) musicaFondo.dispose();
         if (shape != null) shape.dispose();
         if (hud != null) hud.dispose();
-// No disposear skinUI acá si lo usan Chat/Inventario (ellos ya hacen su dispose).
+        if (debugOverlay != null) debugOverlay.dispose();
 
-        // ¡No disponer Render.batch si lo usan otras pantallas!
     }
 
-    // ===== Áreas opcionales (un solo TMX con AREA_*) =====
     private String areaActual = null;
     private void cambiarAreaPorClick(String targetArea, float spawnX, float spawnY, String transicion) {
         if (mapaTiled == null || targetArea == null) return;
