@@ -46,7 +46,7 @@ public class Jugador extends Personaje {
 
     // ⬇️ NUEVO: constructor con monedas iniciales
     public Jugador(Colisiones colisiones, int monedasIniciales) {
-        super("char_a_p1/adelante/001.png", 300, 150, 1f);
+        super("personaje/adelante/001.png", 300, 150, 1f);
         this.colisiones = colisiones;
         this.dinero = new Moneda(monedasIniciales);
 
@@ -60,11 +60,11 @@ public class Jugador extends Personaje {
 
         this.hitbox = new Rectangle(personajeX + hitOffsetX, personajeY + hitOffsetY, hitW, hitH);
 
-        this.animacionIdle = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/adelante", 5, 0.2f);
-        this.animacionAdelante = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/adelante", 6, 0.08f);
-        this.animacionAtras = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/atras", 6, 0.08f);
-        this.animacionDerecha = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/derecha", 6, 0.08f);
-        this.animacionIzquierda = Animacion.crearAnimacionDesdeCarpeta("char_a_p1/izquierda", 6, 0.08f);
+        this.animacionIdle = Animacion.crearAnimacionDesdeCarpeta("personaje/adelante", 5, 0.2f);
+        this.animacionAdelante = Animacion.crearAnimacionDesdeCarpeta("personaje/adelante", 6, 0.08f);
+        this.animacionAtras = Animacion.crearAnimacionDesdeCarpeta("personaje/atras", 6, 0.08f);
+        this.animacionDerecha = Animacion.crearAnimacionDesdeCarpeta("personaje/derecha", 6, 0.08f);
+        this.animacionIzquierda = Animacion.crearAnimacionDesdeCarpeta("personaje/izquierda", 6, 0.08f);
     }
 
     // === DINERO (helpers) ===
