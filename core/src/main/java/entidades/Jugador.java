@@ -14,7 +14,7 @@ public class Jugador extends Personaje {
     private final Colisiones colisiones;
 
     // Hitbox de “pies”: ajustá a tu sprite real
-    private final float hitW = 20f, hitH = 14f;
+    private final float hitW = 12f * escala, hitH = 15f * escala;
     private final float hitOffsetX; // (spriteWidth - hitW)/2
     private final float hitOffsetY; // cuanto subís/bajás el rect respecto del origen del sprite
 
@@ -54,9 +54,8 @@ public class Jugador extends Personaje {
         float spriteW = getWidth();
         float spriteH = getHeight();
 
-        // Hitbox centrada horizontal, apoyada abajo (ajustá hitOffsetY si hace falta)
-        this.hitOffsetX = (spriteW - hitW) * 0.5f;
-        this.hitOffsetY = 0f;
+        this.hitOffsetX = -hitW * 0.7f;  // Centro horizontal de la hitbox en personajeX
+        this.hitOffsetY = -hitH * 0.8f;  // Centro vertical de la hitbox en personajeY
 
         this.hitbox = new Rectangle(personajeX + hitOffsetX, personajeY + hitOffsetY, hitW, hitH);
 
