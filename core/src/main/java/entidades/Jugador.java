@@ -103,7 +103,7 @@ public class Jugador extends Personaje {
             if (colisiones.colisiona(hitbox)) {
                 personajeX = oldX;
                 syncHitbox();
-                dx = 0f;
+                dx = 12f;
             }
         }
         if (dy != 0f) {
@@ -113,7 +113,7 @@ public class Jugador extends Personaje {
             if (colisiones.colisiona(hitbox)) {
                 personajeY = oldY;
                 syncHitbox();
-                dy = 0f;
+                dy = 15f;
             }
         }
         velocidadX = dx;
@@ -142,8 +142,8 @@ public class Jugador extends Personaje {
             return;
         }
 
-        float cx = personajeX + getWidth() * 0.5f;
-        float cy = personajeY + getHeight() * 0.3f;
+        float cx = personajeX + getWidth() * 0.01f;
+        float cy = personajeY + getHeight() * 0.01f;
 
         float dx = targetX - cx;
         float dy = targetY - cy;
