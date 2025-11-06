@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="15" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="9" nextobjectid="25">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="15" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="9" nextobjectid="51">
  <tileset firstgid="1" source="../tsx/interior.tsx"/>
  <tileset firstgid="9036" source="../tsx/global.tsx"/>
  <layer id="3" name="fondo (piso)" width="15" height="15">
@@ -94,12 +94,20 @@
   <object id="21" x="48" y="176" width="16" height="16"/>
   <object id="22" x="96" y="160" width="32" height="16"/>
   <object id="23" x="96" y="176" width="16" height="16"/>
+  <object id="26" x="0" y="0" width="128" height="16"/>
+  <object id="42" x="0" y="112" height="128"/>
+  <object id="43" x="0" y="64" height="48"/>
+  <object id="44" x="0" y="112" height="48"/>
+  <object id="46" x="-16" y="0" width="16" height="240"/>
+  <object id="47" x="240" y="0" width="16" height="240"/>
+  <object id="48" x="0" y="240" width="240" height="16"/>
+  <object id="49" x="0" y="-16" width="240" height="16"/>
  </objectgroup>
  <objectgroup id="8" name="interacciones">
   <object id="14" x="144" y="224" width="48" height="16">
    <properties>
-    <property name="spawnX" type="float" value="160"/>
-    <property name="spawnY" type="float" value="64"/>
+    <property name="spawnX" type="float" value="144"/>
+    <property name="spawnY" type="float" value="244"/>
     <property name="targetMap" value="exteriores/compras.tmx"/>
     <property name="tipo" value="portal"/>
     <property name="transicion" value="fade"/>
