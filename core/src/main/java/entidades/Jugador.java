@@ -11,7 +11,7 @@ import utilidades.Moneda;   // ⬅️ NUEVO
 
 public class Jugador extends Personaje {
 
-    private final Colisiones colisiones;
+    private Colisiones colisiones;
 
     // Hitbox de “pies”: ajustá a tu sprite real
     private final float hitW = 12f * escala, hitH = 15f * escala;
@@ -103,7 +103,7 @@ public class Jugador extends Personaje {
             if (colisiones.colisiona(hitbox)) {
                 personajeX = oldX;
                 syncHitbox();
-                dx = 12f;
+                dx = 0f;   // ← ANTES: 12f (mal)
             }
         }
         if (dy != 0f) {
@@ -113,12 +113,13 @@ public class Jugador extends Personaje {
             if (colisiones.colisiona(hitbox)) {
                 personajeY = oldY;
                 syncHitbox();
-                dy = 15f;
+                dy = 0f;   // ← ANTES: 15f (mal)
             }
         }
         velocidadX = dx;
         velocidadY = dy;
     }
+
 
     public float getVelPx() {
         return velPx;
@@ -197,10 +198,25 @@ public class Jugador extends Personaje {
         batch.draw(frame, getPersonajeX(), getPersonajeY(), w, h);
     }
 
+    public float getAncho() {
+        return hitbox.width;
+    }
+
+    public float getAlto()  {
+        return hitbox.height;
+    }
+
 
     public void setBloqueado(boolean b) {
         bloqueado = b;
         velocidadX = 0;
         velocidadY = 0;
     }
+
+    public void setColisiones(Colisiones nuevasColisiones) {
+        if (nuevasColisiones != null) {
+            this.colisiones = nuevasColisiones;
+        }
+    }
+
 }
