@@ -5,9 +5,13 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 
+import java.util.Map;
+
 import utilidades.Animacion;
 import utilidades.Colisiones;
-import utilidades.Moneda;   // ⬅️ NUEVO
+import utilidades.Moneda;// ⬅️ NUEVO
+import utilidades.items.Item;
+
 
 public class Jugador extends Personaje {
 
@@ -38,6 +42,11 @@ public class Jugador extends Personaje {
     private final Moneda dinero;
 
     private enum Direccion {ARRIBA, ABAJO, DERECHA, IZQUIERDA}
+    private float baseSpeed = 160f;           // era tu velPx
+    private final Mochila mochila = new Mochila();
+    private final EquippedItems equipped = new EquippedItems();
+
+
 
     // Constructor clásico -> inicia con 0 monedas
     public Jugador(Colisiones colisiones) {
@@ -77,6 +86,52 @@ public class Jugador extends Personaje {
 
     public boolean gastarMonedas(int costo) {
         return dinero.restar(costo);
+    }
+
+    public Mochila getMochila(){ return mochila; }
+    public EquippedItems getEquipped(){ return equipped; }
+
+    public float getBaseSpeed(){ return baseSpeed; }
+    public void setBaseSpeed(float s){ baseSpeed = s; }
+
+    // Suma los bonus de todos los ítems equipados (ROPA)
+    public float getVelocidadEfectiva(){
+        float bonus = 0f;
+        for (Map.Entry<EquipamentSlot, utilidades.items.Item> e : equipped.all().entrySet()){
+            utilidades.items.Item it = e.getValue();
+            if (it != null) {
+                // ver punto 2
+            }
+        }
+        return baseSpeed * (1f + bonus);
+    }
+
+    // Equipar por slot (validación simple por id)
+    public boolean equip(String itemId, EquipamentSlot slot){
+        for (Item it : mochila.getItems()){
+            if (!it.getId().equals(itemId)) continue;
+
+            switch (slot){
+                case CABEZA:
+                    if(!(itemId.contains("gorro") || itemId.contains("anteojos"))) return false;
+                    break;
+                case TORSO:
+                    if(!(itemId.contains("remera") || itemId.contains("campera"))) return false;
+                    break;
+                case PIERNAS:
+                    if(!itemId.contains("pantalon")) return false;
+                    break;
+                case PIES:
+                    if(!itemId.contains("zapatillas")) return false;
+                    break;
+                case ACCESORIO:
+                    // libre
+                    break;
+            }
+            equipped.set(slot, it);
+            return true;
+        }
+        return false;
     }
 
     // === HITBOX ===
@@ -122,12 +177,13 @@ public class Jugador extends Personaje {
 
 
     public float getVelPx() {
-        return velPx;
+        return getVelocidadEfectiva(); // devuelve la velocidad con bonus por ropa
     }
 
     public void setVelPx(float v) {
-        velPx = v;
+        setBaseSpeed(v); // actualiza la velocidad base
     }
+
 
     public void cancelarMovimiento() {
         velocidadX = 0f;
@@ -154,8 +210,10 @@ public class Jugador extends Personaje {
         if (len > 1f) {
             dx /= len;
             dy /= len;
-            movX = dx * velPx * delta;
-            movY = dy * velPx * delta;
+            float speed = getVelocidadEfectiva();   // ← usa bonus de ropa
+            movX = dx * speed * delta;
+            movY = dy * speed * delta;
+
 
             if (Math.abs(movX) > Math.abs(movY)) {
                 direccionActual = movX > 0 ? Direccion.DERECHA : Direccion.IZQUIERDA;
