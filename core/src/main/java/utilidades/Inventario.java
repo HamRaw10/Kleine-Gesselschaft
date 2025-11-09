@@ -1,195 +1,222 @@
 package utilidades;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
-import com.badlogic.gdx.utils.Scaling;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Array;
+
 import entidades.Jugador;
+import entidades.EquipamentSlot;
+import utilidades.items.ClothingItem;
+import utilidades.items.Item;
+import entidades.Mochila;
 
 public class Inventario {
-    private Stage escenarioInventario;
-    private boolean visible;
-    public Jugador jugador;
-    private Float velBackup = null;
 
-    private ShapeRenderer shapeRenderer;
-    private SpriteBatch batch;
-    private Skin skin;
-    private Table tablaPrincipal;
-    private Table tablaSlots;
-    private Table tablaCategorias;
-    private Chat chat; // Referencia al chat para verificar si está visible
+    private final Stage stage;        // Stage propio del inventario
+    private final Skin skin;
+    private final Group root;         // Contenedor para poder add/remove fácil
+    private final Jugador jugador;
 
-    // Categorías (pestañas simples)
-    private String[] categorias = {"Ropa", "Pelo", "Pantalones", "Calzado", "Accesorios"};
-    private int categoriaActual = 0;
+    private final Table grid;         // Grilla de items
+    private final Label titulo;
 
-    // Tamaños
-    private final float ANCHO_INVENTARIO = 600f;
-    private final float ALTO_INVENTARIO = 400f;
-    private final float TAMANO_SLOT = 60f;
-    private final int FILAS = 5;
-    private final int COLUMNAS = 4;
+    private final int ICON_SIZE = 48;
+    private final int COLS = 4;
 
-    public Inventario(Skin skin, Chat chat, Jugador jugador) { // Añadido parámetro Chat
+    private boolean visible = false;
+
+    public Inventario(Stage stage, Skin skin, Jugador jugador) {
+        this.stage = stage;
         this.skin = skin;
-        this.chat = chat;
         this.jugador = jugador;
-        this.visible = false;
-        this.escenarioInventario = new Stage(new ScreenViewport());
-        this.shapeRenderer = new ShapeRenderer();
-        this.batch = new SpriteBatch();
 
-        // Crear UI
-        crearInterfaz();
+        this.root = new Group();
+        this.grid = new Table(skin);
+        this.titulo = new Label("Inventario - Ropa", skin);
+
+        buildUI();
+        actualizarSlots(); // primera carga
+        // OJO: no agregamos 'root' al stage todavía. Lo hace setVisible(true)
     }
 
-    private void crearInterfaz() {
-        // Tabla principal (centrado y fill parent)
-        tablaPrincipal = new Table();
-        tablaPrincipal.setFillParent(true);
-        tablaPrincipal.center().pad(50f); // Padding para centrar en pantalla
+    // === Construcción UI ===
+    private void buildUI() {
+        // Darle tamaño inicial al root (por si se abre antes del primer resize)
+        root.setSize(stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
 
-        // Pestañas de categorías (fila horizontal arriba)
-        tablaCategorias = new Table(skin);
-        tablaCategorias.top();
-        for (int i = 0; i < categorias.length; i++) {
-            final int index = i;
-            TextButton botonCategoria = new TextButton(categorias[i], skin, "default"); // Usa estilo default del skin
-            botonCategoria.addListener(event -> {
-                categoriaActual = index;
-                actualizarSlots();
-                return true;
-            });
-            tablaCategorias.add(botonCategoria).pad(5f).expandX().fillX();
-        }
-        // Añadir tabla de categorías a principal (una sola fila)
-        tablaPrincipal.add(tablaCategorias).colspan(COLUMNAS).expandX().fillX().row();
+        Table panel = new Table(skin);
+        panel.setFillParent(true);      // <- importante
+        panel.pad(20f);
+        panel.defaults().pad(6f);
 
-        // Cuadrícula de slots
-        tablaSlots = new Table(skin);
-        tablaSlots.center();
-        actualizarSlots();
+        titulo.setAlignment(Align.center);
+        panel.add(titulo).colspan(2).growX().row();
 
-        // Añadir slots a la tabla principal
-        tablaPrincipal.add(tablaSlots).expand().fill().row();
+        ScrollPane scroll = new ScrollPane(grid, skin);
+        scroll.setFadeScrollBars(false);
+        panel.add(scroll).colspan(2).grow().row();
 
-        // Botón de cerrar (arriba derecha, en una celda separada)
-        TextButton botonCerrar = new TextButton("X", skin, "default");
-        botonCerrar.addListener(event -> {
-            cerrarInventario();
-            return true;
+        TextButton cerrar = new TextButton("Cerrar (E)", skin);
+        cerrar.addListener(new ClickListener(){
+            @Override public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) { return true; }
+            @Override public void clicked(InputEvent event, float x, float y) { setVisible(false); }
         });
-        // Añadir en una nueva row para no superponer
-        tablaPrincipal.add(botonCerrar).top().right().pad(10f).size(40f, 40f).colspan(COLUMNAS);
+        panel.add(cerrar).right().colspan(2).row();
 
-        escenarioInventario.addActor(tablaPrincipal);
+        root.addActor(panel);
+        root.setVisible(false);
     }
 
-    private void actualizarSlots() {
-        tablaSlots.clear();
-        // Crear slots vacíos (placeholders con texto "Slot" y fondo del skin)
-        Drawable fondoSlot = skin.getDrawable("white"); // Drawable blanco del skin uiskin.json (ajusta si no existe)
-        if (fondoSlot == null) {
-            fondoSlot = skin.newDrawable("white", Color.GRAY); // Fallback a gris
-        }
 
-        for (int fila = 0; fila < FILAS; fila++) {
-            Table filaSlots = new Table(); // Subtabla para fila horizontal
-            for (int col = 0; col < COLUMNAS; col++) {
-                TextButton slot = new TextButton("Slot", skin, "default"); // Usa TextButton como placeholder
-                slot.getLabel().setColor(Color.GRAY); // Color gris para vacío
-                slot.getStyle().up = skin.newDrawable(fondoSlot, Color.LIGHT_GRAY); // Fondo gris
-                slot.setSize(TAMANO_SLOT, TAMANO_SLOT);
-                // Aquí agregar listeners para ítems en el futuro
-                filaSlots.add(slot).pad(5f).size(TAMANO_SLOT, TAMANO_SLOT);
+    // === Refresca la grilla con los ítems de la mochila ===
+    public void actualizarSlots() {
+        grid.clear();
+
+        Mochila m = jugador.getMochila();
+        Array<Item> items = new Array<>(m.getItems().toArray(new Item[0]));
+
+        int col = 0;
+        for (Item it : items) {
+            if (!(it instanceof ClothingItem)) continue;
+            final ClothingItem ci = (ClothingItem) it;
+
+            ImageButton btn = buildItemButton(ci);
+            btn.setUserObject(ci);
+
+            Label nombre = new Label(ci.getDisplayName(), skin);
+            nombre.setWrap(true);
+
+            Table cell = new Table(skin);
+            cell.defaults().pad(2f);
+            cell.add(btn).size(ICON_SIZE).row();
+            cell.add(nombre).width(ICON_SIZE + 24f).center();
+
+            if (esElEquipado(ci)) {
+                nombre.setText("★ " + ci.getDisplayName());
             }
-            tablaSlots.add(filaSlots).expandX().fillX().row();
-        }
 
-        // Título de categoría actual (debajo de slots)
-        TextButton titulo = new TextButton("Categoría: " + categorias[categoriaActual], skin, "default");
-        titulo.setColor(Color.WHITE);
-        tablaSlots.add(titulo).colspan(COLUMNAS).expandX().fillX().row();
+            btn.addListener(new ClickListener() {
+                @Override public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                    return true;
+                }
+                @Override public void clicked(InputEvent event, float x, float y) {
+                    try {
+                        boolean ok = jugador.equipClothing(ci);
+                        if (!ok) {
+                            Gdx.app.log("INV", "No se pudo equipar " + ci.getId());
+                        } else {
+                            actualizarSlots();
+                        }
+                    } catch (Exception e) {
+                        Gdx.app.error("INV", "Error al equipar " + ci.getId(), e);
+                        jugador.setBloqueado(false);
+                    }
+                }
+            });
+
+            grid.add(cell).pad(6f);
+            col++;
+            if (col >= COLS) { col = 0; grid.row(); }
+        }
+    }
+
+    private ImageButton buildItemButton(ClothingItem ci) {
+        TextureRegionDrawable icon = new TextureRegionDrawable(
+            new TextureRegion(getIconTexture(ci)));
+        ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
+        style.imageUp = icon;
+        style.imageDown = icon;
+        style.up = simplePanel(ICON_SIZE + 8, ICON_SIZE + 8, 0.12f);
+        style.down = simplePanel(ICON_SIZE + 8, ICON_SIZE + 8, 0.2f);
+        return new ImageButton(style);
+    }
+
+    private Texture getIconTexture(ClothingItem ci) {
+        String path = ci.getFolder() + "/" + ci.getBaseName() + "_adelante.png";
+        Texture tex = new Texture(Gdx.files.internal(path));
+        tex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        return tex;
+    }
+
+    private TextureRegionDrawable simplePanel(int w, int h, float gray) {
+        Pixmap pm = new Pixmap(w, h, Pixmap.Format.RGBA8888);
+        Color c = new Color(gray, gray, gray, 0.9f);
+        pm.setColor(c);
+        pm.fill();
+        Texture t = new Texture(pm);
+        pm.dispose();
+        return new TextureRegionDrawable(new TextureRegion(t));
+    }
+
+    private boolean esElEquipado(ClothingItem ci) {
+        Item actual = jugador.getEquipped().get(ci.getSlot());
+        if (actual == null) return false;
+        if (!(actual instanceof ClothingItem)) return false;
+        ClothingItem eq = (ClothingItem) actual;
+        return eq.getFolder().equals(ci.getFolder()) &&
+            eq.getBaseName().equals(ci.getBaseName());
+    }
+
+    // === Ciclo de dibujo/actualización ===
+    public void render() {
+        if (!visible) return;
+        stage.draw();
     }
 
     public void actualizar(float delta) {
-        if (visible) {
-            escenarioInventario.act(delta);
+        if (!visible) return;
+        stage.act(delta);
+    }
 
-            // Cerrar con 'E' o clic en botón (ya manejado en listener)
-            if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
-                cerrarInventario();
-            }
+    // === API para PantallaJuego ===
+    public Group getRoot()  { return root; }
+    public Stage getStage() { return stage; }
+
+    public boolean isVisible() { return visible; }
+
+    public void setVisible(boolean v) {
+        if (this.visible == v) return;
+        this.visible = v;
+
+        if (v) {
+            if (root.getStage() == null) stage.addActor(root);
+            // Ajustar tamaño del contenedor a la pantalla actual
+            root.setSize(stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
+            root.setVisible(true);
+            setInputProcessor();
         } else {
-            // Abrir con 'E' solo si chat no está visible
-            if (Gdx.input.isKeyJustPressed(Input.Keys.E) && !chat.isChatVisible()) { // Usa el método de tu Chat
-                abrirInventario();
-            }
+            root.setVisible(false);
+            root.remove();
         }
     }
 
-    public void render() {
-        if (visible) {
-            // Fondo semitransparente
-            shapeRenderer.setProjectionMatrix(escenarioInventario.getCamera().combined);
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            shapeRenderer.setColor(0f, 0f, 0f, 0.5f);
-            shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-            shapeRenderer.end();
-
-            // Dibujar UI
-            escenarioInventario.draw();
-        }
-    }
-
-    private void abrirInventario() {
-        visible = true;
-        Gdx.input.setInputProcessor(escenarioInventario);
-        if (jugador != null) {
-            if (velBackup == null) velBackup = jugador.getVelPx(); // guardar
-            jugador.setVelPx(0f);       // bloquear movimiento por velocidad
-            jugador.cancelarMovimiento();// que quede quieto YA
-        }
-    }
-
-    private void cerrarInventario() {
-        visible = false;
-        Gdx.input.setInputProcessor(null);
-        if (jugador != null && velBackup != null) {
-            jugador.setVelPx(velBackup);
-            velBackup = null;
-        }
-    }
-
-
-    public void resize(int width, int height) {
-        escenarioInventario.getViewport().update(width, height, true);
-    }
-
-    public void dispose() {
-        if (escenarioInventario != null) escenarioInventario.dispose();
-        if (shapeRenderer != null) shapeRenderer.dispose();
-        if (batch != null) batch.dispose();
-    }
-
-    public boolean isVisible() {
-        return visible;
-    }
 
     public void setInputProcessor() {
-        if (visible) {
-            Gdx.input.setInputProcessor(escenarioInventario);
-        }
+        Gdx.input.setInputProcessor(stage);
+    }
+
+    public void resize(int width, int height) {
+        stage.getViewport().update(width, height, true);
+        root.setSize(stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
+    }
+
+
+    public void dispose() {
+        stage.dispose();
     }
 }
-
-

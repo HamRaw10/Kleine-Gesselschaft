@@ -1,5 +1,9 @@
 package utilidades.items;
 
 public enum ItemType {
-    CONSUMIBLE, ROPA
+    GENERIC,
+    ROPA,
+    CONSUMIBLE,
+    TOOL,
+    QUEST
 }

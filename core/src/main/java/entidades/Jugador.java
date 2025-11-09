@@ -1,15 +1,21 @@
 package entidades;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import java.util.Map;
 
+import utilidades.items.ClothingItem;
+import utilidades.items.VisualOutfit;
+import entidades.EquipamentSlot;
 import utilidades.Animacion;
 import utilidades.Colisiones;
 import utilidades.Moneda;// ⬅️ NUEVO
+import utilidades.items.ClothingAnimationSet;
 import utilidades.items.Item;
 
 
@@ -40,11 +46,16 @@ public class Jugador extends Personaje {
 
     // ⬇️ NUEVO: dinero del jugador
     private final Moneda dinero;
+    private final VisualOutfit outfit = new VisualOutfit();
+
 
     private enum Direccion {ARRIBA, ABAJO, DERECHA, IZQUIERDA}
     private float baseSpeed = 160f;           // era tu velPx
     private final Mochila mochila = new Mochila();
     private final EquippedItems equipped = new EquippedItems();
+    private ClothingAnimationSet pantalones; // null si no hay equipados
+    private static final boolean ROPA_ACTIVADA = true; // ← por ahora OFF
+
 
 
 
@@ -73,6 +84,24 @@ public class Jugador extends Personaje {
         this.animacionAtras = Animacion.crearAnimacionDesdeCarpeta("personaje/atras", 6, 0.08f);
         this.animacionDerecha = Animacion.crearAnimacionDesdeCarpeta("personaje/derecha", 6, 0.08f);
         this.animacionIzquierda = Animacion.crearAnimacionDesdeCarpeta("personaje/izquierda", 6, 0.08f);
+        // Ejemplo de carga (3 frames por dir, ajustá a lo tuyo)
+        /*this.pantalones = ClothingAnimationSet.loadFromFolder(
+            "Pantalones",      // carpeta que mostraste
+            "pantalon",        // baseName
+            3,                 // frames por dirección
+            0.08f              // duración por frame
+        ).setOffset(0f, 0f);       // corrés si necesitás alinear*/
+        Gdx.app.log("ASSET", "P1=" + Gdx.files.internal("Ropa/Pantalones/pantalon1.png").exists());
+        Gdx.app.log("ASSET", "R1=" + Gdx.files.internal("Ropa/Remeras/remera1.png").exists());
+
+
+        //vestirPorDefecto();
+        // ...
+        if (ROPA_ACTIVADA) {
+            vestirPorDefecto(); // ← solo si activamos más adelante
+        }
+
+
     }
 
     // === DINERO (helpers) ===
@@ -93,6 +122,15 @@ public class Jugador extends Personaje {
 
     public float getBaseSpeed(){ return baseSpeed; }
     public void setBaseSpeed(float s){ baseSpeed = s; }
+
+    public void equipVisual(EquipamentSlot slot, String folder, String baseName,
+                            float frameDur, float ox, float oy) {
+        // frames = 1 porque cada modelo tiene 1 imagen por dirección
+        ClothingAnimationSet set = ClothingAnimationSet
+            .loadFromFolder(folder, baseName, 1, frameDur)
+            .setOffset(ox, oy);
+        outfit.set(slot, set);
+    }
 
     // Suma los bonus de todos los ítems equipados (ROPA)
     public float getVelocidadEfectiva(){
@@ -175,6 +213,21 @@ public class Jugador extends Personaje {
         velocidadY = dy;
     }
 
+    private ClothingAnimationSet.Dir mapDir(Direccion d){
+        switch (d){
+            case ARRIBA:    return ClothingAnimationSet.Dir.ARRIBA;
+            case ABAJO:     return ClothingAnimationSet.Dir.ABAJO;   // <– antes estaba mal
+            case DERECHA:   return ClothingAnimationSet.Dir.DERECHA;
+            case IZQUIERDA: return ClothingAnimationSet.Dir.IZQUIERDA;
+            default:        return ClothingAnimationSet.Dir.ABAJO;
+        }
+    }
+
+
+
+
+
+
 
     public float getVelPx() {
         return getVelocidadEfectiva(); // devuelve la velocidad con bonus por ropa
@@ -253,7 +306,13 @@ public class Jugador extends Personaje {
         }
         float w = getWidth() * escala;
         float h = getHeight() * escala;
+        float x = getPersonajeX();
+        float y = getPersonajeY();
         batch.draw(frame, getPersonajeX(), getPersonajeY(), w, h);
+
+        ClothingAnimationSet.Dir dir = mapDir(direccionActual);
+        outfit.draw(batch, dir, tiempoAnimacion, getPersonajeX(), getPersonajeY(), getWidth() * escala, getHeight() * escala);
+
     }
 
     public float getAncho() {
@@ -276,5 +335,90 @@ public class Jugador extends Personaje {
             this.colisiones = nuevasColisiones;
         }
     }
+    // Carga una prenda como animación de 1 frame por dirección, usando tus sufijos reales:
+
+
+
+
+
+    private void vestirPorDefecto() {
+        // PANTALÓN: jean
+        outfit.set(
+            EquipamentSlot.PIERNAS,
+            ClothingAnimationSet.loadFromFolder4(
+                "Ropa/Pantalones",
+                "pantalon_jean",   // <- EXISTE en tus archivos
+                1, 0.08f,
+                "_adelante", "_atras", "_derecha", "_izquierda"
+            ).setOffset(0f, 0f)
+        );
+
+        // REMERA: hippie
+        outfit.set(
+            EquipamentSlot.TORSO,
+            ClothingAnimationSet.loadFromFolder4(
+                "Ropa/Remeras",
+                "remera_hippie",   // <- EXISTE en tus archivos
+                1, 0.08f,
+                "_adelante", "_atras", "_derecha", "_izquierda"
+            ).setOffset(0f, 0f)
+        );
+
+        // Logs para verificar
+        Gdx.app.log("ASSET", "Pantalón frente? " +
+            Gdx.files.internal("Ropa/Pantalones/pantalon_jean_adelante.png").exists());
+        Gdx.app.log("ASSET", "Remera frente? " +
+            Gdx.files.internal("Ropa/Remeras/remera_hippie_adelante.png").exists());
+    }
+
+
+
+    // ===== Helpers de ropa (1 frame por dirección, usando tus sufijos) =====
+    // ===== Helpers de ropa (1 frame por dirección, usando tus sufijos y variant) =====
+    private ClothingAnimationSet buildClothingSet(
+        String folder, String baseName, int variant, float frameDur) {
+
+        // Si manejás variantes numeradas, quedan así:
+        String down   = "_adelante"  + variant;
+        String up     = "_atras"     + variant;
+        String right  = "_derecha"   + variant;
+
+        // Soporte a ambas grafías para evitar crashear:
+        String leftA  = "_izquierda" + variant;
+        String leftB  = "_izquierdo" + variant;
+
+        // Intentá izquierda; si no existe, probá izquierdo
+        try {
+            return ClothingAnimationSet.loadFromFolder4(
+                folder, baseName, 1, frameDur, down, up, right, leftA);
+        } catch (GdxRuntimeException ex) {
+            return ClothingAnimationSet.loadFromFolder4(
+                folder, baseName, 1, frameDur, down, up, right, leftB);
+        }
+    }
+
+
+
+    public boolean equipClothing(ClothingItem ci) {
+        try {
+            ClothingAnimationSet set = buildClothingSet(ci.getFolder(), ci.getBaseName(), ci.getVariant(), 0.08f);
+            outfit.set(ci.getSlot(), set);
+            equipped.set(ci.getSlot(), ci);
+            return true;
+        } catch (Exception e) {
+            Gdx.app.error("EQUIP", "No se pudo equipar: " + ci.getId(), e);
+            setBloqueado(false); // por las dudas
+            return false;
+        }
+    }
+
+
+    public void unequipClothing(entidades.EquipamentSlot slot) {
+        outfit.set(slot, null);
+        equipped.set(slot, null);
+    }
+
+
+
 
 }

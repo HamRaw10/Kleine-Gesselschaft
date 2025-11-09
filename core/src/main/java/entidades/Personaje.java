@@ -1,13 +1,17 @@
 package entidades;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
+
 import java.util.List;
 
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
+/**
+ * {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms.
+ */
 
 public abstract class Personaje {
     protected float personajeX;
@@ -23,7 +27,7 @@ public abstract class Personaje {
     // NUEVO: Hitbox para colisiones (más pequeño que el sprite para precisión)
     protected Rectangle hitbox;
 
-    public Personaje(String texturaDelPersonaje, float personajeX, float personajeY, float escala){
+    public Personaje(String texturaDelPersonaje, float personajeX, float personajeY, float escala) {
         this.texture = new Texture(texturaDelPersonaje);
         this.personajeY = personajeY;
         this.personajeX = personajeX;
@@ -43,6 +47,7 @@ public abstract class Personaje {
     public void setEscala(float escala) {
         this.escala = escala;
     }
+
     protected void actualizarPosicion(float newX, float newY) {
         this.personajeX = newX;
         this.personajeY = newY;
@@ -53,7 +58,7 @@ public abstract class Personaje {
     }
 
 
-    public void limitesDelPersonaje(){
+    public void limitesDelPersonaje() {
         float minX = texture.getWidth() / 2f;//
         float maxX = Gdx.graphics.getWidth() - minX;//
         float minY = texture.getHeight() / 2f;//
@@ -104,15 +109,19 @@ public abstract class Personaje {
     public Texture getTexture() {
         return texture;
     }
+
     public float getPersonajeX() {
         return personajeX - (texture.getWidth() * escala / 2f);
     }
+
     public float getPersonajeY() {
         return personajeY - (texture.getHeight() * escala / 2f);
     }
+
     public float getWidth() {
         return texture.getWidth() * escala;
     }
+
     public float getHeight() {
         return texture.getHeight() * escala;
     }
