@@ -1,6 +1,7 @@
 package entidades;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -372,46 +373,40 @@ public class Jugador extends Personaje {
     }
 
 
-
-    // ===== Helpers de ropa (1 frame por dirección, usando tus sufijos) =====
-    // ===== Helpers de ropa (1 frame por dirección, usando tus sufijos y variant) =====
-    private ClothingAnimationSet buildClothingSet(
-        String folder, String baseName, int variant, float frameDur) {
-
-        // Si manejás variantes numeradas, quedan así:
-        String down   = "_adelante"  ;
-        String up     = "_atras"     ;
-        String right  = "_derecha"   ;
-
-        // Soporte a ambas grafías para evitar crashear:
-        String leftA  = "_izquierda" ;
-        String leftB  = "_izquierdo";
-
-        // Intentá izquierda; si no existe, probá izquierdo
-        try {
-            return ClothingAnimationSet.loadFromFolder4(
-                folder, baseName, 1, frameDur, down, up, right, leftA);
-        } catch (GdxRuntimeException ex) {
-            return ClothingAnimationSet.loadFromFolder4(
-                folder, baseName, 1, frameDur, down, up, right, leftB);
-        }
-    }
-
-
-
     public boolean equipClothing(ClothingItem ci) {
+        System.out.println("EQUIP: Intentando equipar " + ci.getId() + " en slot " + ci.getSlot());
         try {
-            ClothingAnimationSet set = buildClothingSet(ci.getFolder(), ci.getBaseName(), ci.getVariant(), 0.08f);
+            // Forzar unequip del slot actual
+            unequipClothing(ci.getSlot());
+
+            // Verificar si el path base existe (ej. "Ropa/Torso/hippie_adelante.png")
+            String basePath = ci.getFolder() + "/" + ci.getBaseName() + "_adelante.png";
+            if (!Gdx.files.internal(basePath).exists()) {
+                System.out.println("EQUIP: ERROR - Archivo no encontrado: " + basePath);
+                return false;
+            }
+
+            // Cargar el set de animación
+            ClothingAnimationSet set = ClothingAnimationSet.loadFromFolder4(
+                ci.getFolder(),
+                ci.getBaseName(),
+                1,  // frames por dirección
+                0.08f,  // duración
+                "_adelante", "_atras", "_derecha", "_izquierda"
+            ).setOffset(0f, 0f);
+
+            // Aplicar al outfit y equipped
             outfit.set(ci.getSlot(), set);
             equipped.set(ci.getSlot(), ci);
-            Gdx.app.log("EQUIP", "Prenda equipada: " + ci.getId() + " en slot " + ci.getSlot());  // Log de éxito
+            System.out.println("EQUIP: Éxito - Prenda equipada: " + ci.getId());
             return true;
         } catch (Exception e) {
-            Gdx.app.error("EQUIP", "No se pudo equipar: " + ci.getId(), e);
-            setBloqueado(false); // por las dudas
+            System.out.println("EQUIP: ERROR - No se pudo equipar " + ci.getId() + ": " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
+
 
 
     public void unequipClothing(entidades.EquipamentSlot slot) {

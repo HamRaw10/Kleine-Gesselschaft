@@ -116,18 +116,26 @@ public class Inventario {
                 @Override public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                     return true;
                 }
-                @Override public void clicked(InputEvent event, float x, float y) {
-                    try {
-                        boolean ok = jugador.equipClothing(ci);
-                        if (!ok) {
-                            Gdx.app.log("INV", "No se pudo equipar " + ci.getId());
+
+                @Override  public void clicked(InputEvent event, float x, float y) {
+                    ImageButton btn = (ImageButton) event.getListenerActor();
+                    ClothingItem ci = (ClothingItem) btn.getUserObject();
+                    System.out.println("INVENTARIO: Clic en ítem " + ci.getId() + " (slot: " + ci.getSlot() + ")");
+
+                    Item equippedItem = jugador.getEquipped().get(ci.getSlot());
+                    if (equippedItem == null || !equippedItem.getId().equals(ci.getId())) {
+                        System.out.println("INVENTARIO: Intentando equipar " + ci.getId());
+                        boolean success = jugador.equipClothing(ci);
+                        if (success) {
+                            System.out.println("INVENTARIO: Equipado exitosamente " + ci.getId());
                         } else {
-                            actualizarSlots();
+                            System.out.println("INVENTARIO: Falló equipar " + ci.getId());
                         }
-                    } catch (Exception e) {
-                        Gdx.app.error("INV", "Error al equipar " + ci.getId(), e);
-                        jugador.setBloqueado(false);
+                    } else {
+                        System.out.println("INVENTARIO: Desequipando " + ci.getId());
+                        jugador.unequipClothing(ci.getSlot());
                     }
+                    actualizarSlots();  // Refrescar UI
                 }
             });
 

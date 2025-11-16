@@ -10,15 +10,15 @@ import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import java.util.EnumMap;
 
+import javax.script.AbstractScriptEngine;
+
 public class ClothingAnimationSet {
 
     public enum Dir { ARRIBA, ABAJO, DERECHA, IZQUIERDA }
 
     private final EnumMap<Dir, Animation<TextureRegion>> anims = new EnumMap<>(Dir.class);
-    private float frameDuration;
-    private float offsetX = 0f, offsetY = 0f;
 
-    public ClothingAnimationSet(float frameDuration) { this.frameDuration = frameDuration; }
+    private float offsetX = 0f, offsetY = 0f;
 
     public ClothingAnimationSet setOffset(float ox, float oy){ this.offsetX=ox; this.offsetY=oy; return this; }
     public void put(Dir d, Animation<TextureRegion> a){ anims.put(d, a); }
@@ -29,7 +29,7 @@ public class ClothingAnimationSet {
         String downSuffix, String upSuffix, String rightSuffix, String leftSuffix
     ){
         baseFolder = baseFolder.replace("\\", "/");
-        ClothingAnimationSet set = new ClothingAnimationSet(frameDuration);
+        ClothingAnimationSet set = new ClothingAnimationSet();
         set.put(Dir.ABAJO,     buildAnim(baseFolder, baseName + downSuffix,   frames));
         set.put(Dir.ARRIBA,    buildAnim(baseFolder, baseName + upSuffix,     frames));
         set.put(Dir.DERECHA,   buildAnim(baseFolder, baseName + rightSuffix,  frames));
