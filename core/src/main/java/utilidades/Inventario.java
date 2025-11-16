@@ -18,6 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import entidades.Jugador;
 import entidades.EquipamentSlot;
@@ -85,6 +86,7 @@ public class Inventario {
 
     // === Refresca la grilla con los ítems de la mochila ===
     public void actualizarSlots() {
+
         grid.clear();
 
         Mochila m = jugador.getMochila();
@@ -148,9 +150,13 @@ public class Inventario {
 
     private Texture getIconTexture(ClothingItem ci) {
         String path = ci.getFolder() + "/" + ci.getBaseName() + "_adelante.png";
-        Texture tex = new Texture(Gdx.files.internal(path));
-        tex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-        return tex;
+        Gdx.app.log("INV", "Cargando ícono: " + path);
+        try {
+            return new Texture(Gdx.files.internal(path));
+        } catch (GdxRuntimeException e) {
+            Gdx.app.error("INV", "Error cargando ícono: " + path, e);
+            return null;
+        }
     }
 
     private TextureRegionDrawable simplePanel(int w, int h, float gray) {

@@ -408,6 +408,11 @@ public class PantallaJuego extends ScreenAdapter {
             if (jugador != null) jugador.setBloqueado(true);
             inventarioAbierto = true;
         }
+        if (inventario != null) {
+            inventario.setVisible(true);
+            inventario.actualizarSlots();  // Añade esto para actualizar slots al abrir
+            Gdx.app.log("PANTALLA", "Inventario abierto y slots actualizados.");
+        }
     }
 
     private void cerrarInventario() {
@@ -423,14 +428,6 @@ public class PantallaJuego extends ScreenAdapter {
     @Override public void render(float delta) {
         Gdx.gl.glClearColor(0,0,0,1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        // *** NUEVO: Toggle inventario con tecla E
-        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
-            if (inventario != null) {
-                if (inventario.isVisible()) cerrarInventario();
-                else abrirInventario();
-            }
-        }
 
         switch (transitionState) {
             case FADING_OUT:
@@ -551,7 +548,18 @@ public class PantallaJuego extends ScreenAdapter {
             shape.end();
             Gdx.gl.glDisable(GL20.GL_BLEND);
         }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+            if (inventario != null) {
+                if (inventario.isVisible()) {
+                    cerrarInventario();
+                    Gdx.app.log("PANTALLA", "Cerrando inventario...");
+                } else {
+                    abrirInventario();
+                }
+            }
+        }
     }
+
 
     private int[] toIntArray(Array<Integer> arr) {
         int[] out = new int[arr.size];
@@ -611,7 +619,9 @@ public class PantallaJuego extends ScreenAdapter {
     }
 
     // *** NUEVO: semillas de ropa usando tus nombres de archivos reales
+    // *** NUEVO: semillas de ropa usando tus nombres de archivos reales
     private void seedRopaBasica(Jugador j) {
+        Gdx.app.log("SEED", "Iniciando seed de ropa básica...");
         // Pantalones
         j.getMochila().add(new ClothingItem("pant-hippie", "Pantalón Hippie",
             EquipamentSlot.PIERNAS, "Ropa/Pantalones", "pantalon_hippie", 1));
@@ -626,5 +636,6 @@ public class PantallaJuego extends ScreenAdapter {
             EquipamentSlot.TORSO, "Ropa/Remeras", "remera_boca", 1));
         j.getMochila().add(new ClothingItem("remera-river", "Remera River",
             EquipamentSlot.TORSO, "Ropa/Remeras", "remera_river", 1));
+        Gdx.app.log("SEED", "Mochila poblada con " + j.getMochila().size() + " ítems.");
     }
 }

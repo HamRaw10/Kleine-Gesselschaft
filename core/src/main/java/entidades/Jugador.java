@@ -379,13 +379,13 @@ public class Jugador extends Personaje {
         String folder, String baseName, int variant, float frameDur) {
 
         // Si manejás variantes numeradas, quedan así:
-        String down   = "_adelante"  + variant;
-        String up     = "_atras"     + variant;
-        String right  = "_derecha"   + variant;
+        String down   = "_adelante"  ;
+        String up     = "_atras"     ;
+        String right  = "_derecha"   ;
 
         // Soporte a ambas grafías para evitar crashear:
-        String leftA  = "_izquierda" + variant;
-        String leftB  = "_izquierdo" + variant;
+        String leftA  = "_izquierda" ;
+        String leftB  = "_izquierdo";
 
         // Intentá izquierda; si no existe, probá izquierdo
         try {
@@ -404,6 +404,7 @@ public class Jugador extends Personaje {
             ClothingAnimationSet set = buildClothingSet(ci.getFolder(), ci.getBaseName(), ci.getVariant(), 0.08f);
             outfit.set(ci.getSlot(), set);
             equipped.set(ci.getSlot(), ci);
+            Gdx.app.log("EQUIP", "Prenda equipada: " + ci.getId() + " en slot " + ci.getSlot());  // Log de éxito
             return true;
         } catch (Exception e) {
             Gdx.app.error("EQUIP", "No se pudo equipar: " + ci.getId(), e);
