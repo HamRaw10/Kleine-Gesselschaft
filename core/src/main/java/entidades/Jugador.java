@@ -1,12 +1,10 @@
 package entidades;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import java.util.Map;
 
@@ -54,8 +52,6 @@ public class Jugador extends Personaje {
     private float baseSpeed = 160f;           // era tu velPx
     private final Mochila mochila = new Mochila();
     private final EquippedItems equipped = new EquippedItems();
-    private ClothingAnimationSet pantalones; // null si no hay equipados
-    private static final boolean ROPA_ACTIVADA = true; // ← por ahora OFF
 
 
 
@@ -94,13 +90,6 @@ public class Jugador extends Personaje {
         ).setOffset(0f, 0f);       // corrés si necesitás alinear*/
         Gdx.app.log("ASSET", "P1=" + Gdx.files.internal("Ropa/Pantalones/pantalon1.png").exists());
         Gdx.app.log("ASSET", "R1=" + Gdx.files.internal("Ropa/Remeras/remera1.png").exists());
-
-
-        //vestirPorDefecto();
-        // ...
-        if (ROPA_ACTIVADA) {
-            vestirPorDefecto(); // ← solo si activamos más adelante
-        }
 
 
     }
@@ -336,45 +325,28 @@ public class Jugador extends Personaje {
             this.colisiones = nuevasColisiones;
         }
     }
-    // Carga una prenda como animación de 1 frame por dirección, usando tus sufijos reales:
 
+    /**
+     * Equipa automáticamente la primera prenda disponible de cada slot que esté en la mochila.
+     * Sirve para arrancar sin ropa hardcodeada y mantener synced el estado visual/equipado.
+     */
+    public void equiparPrimeraRopaDisponible() {
+        for (Item item : mochila.getItems()) {
+            if (!(item instanceof ClothingItem)) continue;
+            ClothingItem ci = (ClothingItem) item;
+            if (equipped.get(ci.getSlot()) != null) continue; // ya hay algo en ese slot
 
-
-
-
-    private void vestirPorDefecto() {
-        // PANTALÓN: jean
-        outfit.set(
-            EquipamentSlot.PIERNAS,
-            ClothingAnimationSet.loadFromFolder4(
-                "Ropa/Pantalones",
-                "pantalon_jean",   // <- EXISTE en tus archivos
-                1, 0.08f,
-                "_adelante", "_atras", "_derecha", "_izquierda"
-            ).setOffset(0f, 0f)
-        );
-
-        // REMERA: hippie
-        outfit.set(
-            EquipamentSlot.TORSO,
-            ClothingAnimationSet.loadFromFolder4(
-                "Ropa/Remeras",
-                "remera_hippie",   // <- EXISTE en tus archivos
-                1, 0.08f,
-                "_adelante", "_atras", "_derecha", "_izquierda"
-            ).setOffset(0f, 0f)
-        );
-
-        // Logs para verificar
-        Gdx.app.log("ASSET", "Pantalón frente? " +
-            Gdx.files.internal("Ropa/Pantalones/pantalon_jean_adelante.png").exists());
-        Gdx.app.log("ASSET", "Remera frente? " +
-            Gdx.files.internal("Ropa/Remeras/remera_hippie_adelante.png").exists());
+            try {
+                equipClothing(ci);
+            } catch (Exception e) {
+                Gdx.app.error("EQUIP", "No se pudo auto-equipar " + ci.getId(), e);
+            }
+        }
     }
 
 
     public boolean equipClothing(ClothingItem ci) {
-        System.out.println("EQUIP: Intentando equipar " + ci.getId() + " en slot " + ci.getSlot());
+        Gdx.app.log("EQUIP", "Intentando equipar " + ci.getId() + " en slot " + ci.getSlot());
         try {
             // Forzar unequip del slot actual
             unequipClothing(ci.getSlot());
@@ -382,7 +354,7 @@ public class Jugador extends Personaje {
             // Verificar si el path base existe (ej. "Ropa/Torso/hippie_adelante.png")
             String basePath = ci.getFolder() + "/" + ci.getBaseName() + "_adelante.png";
             if (!Gdx.files.internal(basePath).exists()) {
-                System.out.println("EQUIP: ERROR - Archivo no encontrado: " + basePath);
+                Gdx.app.error("EQUIP", "Archivo no encontrado: " + basePath);
                 return false;
             }
 
@@ -398,11 +370,11 @@ public class Jugador extends Personaje {
             // Aplicar al outfit y equipped
             outfit.set(ci.getSlot(), set);
             equipped.set(ci.getSlot(), ci);
-            System.out.println("EQUIP: Éxito - Prenda equipada: " + ci.getId());
+            Gdx.app.log("EQUIP", "Éxito - Prenda equipada: " + ci.getId());
+            logEstadoRopa();
             return true;
         } catch (Exception e) {
-            System.out.println("EQUIP: ERROR - No se pudo equipar " + ci.getId() + ": " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("EQUIP", "No se pudo equipar " + ci.getId(), e);
             return false;
         }
     }
@@ -412,8 +384,16 @@ public class Jugador extends Personaje {
     public void unequipClothing(entidades.EquipamentSlot slot) {
         outfit.set(slot, null);
         equipped.set(slot, null);
+        Gdx.app.log("EQUIP", "Slot " + slot + " liberado.");
+        logEstadoRopa();
     }
 
+    private void logEstadoRopa() {
+        for (EquipamentSlot s : EquipamentSlot.values()) {
+            Item it = equipped.get(s);
+            Gdx.app.log("EQUIP", " - " + s + ": " + (it == null ? "vacío" : it.getId()));
+        }
+    }
 
 
 

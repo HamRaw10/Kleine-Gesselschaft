@@ -114,28 +114,16 @@ public class Inventario {
 
             btn.addListener(new ClickListener() {
                 @Override public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                    Gdx.app.log("INV", "touchDown en " + ci.getId() + " btn=" + button);
+                    procesarEquip(ci);
                     return true;
                 }
 
                 @Override  public void clicked(InputEvent event, float x, float y) {
                     ImageButton btn = (ImageButton) event.getListenerActor();
                     ClothingItem ci = (ClothingItem) btn.getUserObject();
-                    System.out.println("INVENTARIO: Clic en ítem " + ci.getId() + " (slot: " + ci.getSlot() + ")");
-
-                    Item equippedItem = jugador.getEquipped().get(ci.getSlot());
-                    if (equippedItem == null || !equippedItem.getId().equals(ci.getId())) {
-                        System.out.println("INVENTARIO: Intentando equipar " + ci.getId());
-                        boolean success = jugador.equipClothing(ci);
-                        if (success) {
-                            System.out.println("INVENTARIO: Equipado exitosamente " + ci.getId());
-                        } else {
-                            System.out.println("INVENTARIO: Falló equipar " + ci.getId());
-                        }
-                    } else {
-                        System.out.println("INVENTARIO: Desequipando " + ci.getId());
-                        jugador.unequipClothing(ci.getSlot());
-                    }
-                    actualizarSlots();  // Refrescar UI
+                    Gdx.app.log("INV", "Clic en ítem " + ci.getId() + " (slot: " + ci.getSlot() + ")");
+                    // procesado en touchDown; dejamos el log para trazabilidad
                 }
             });
 
@@ -143,6 +131,24 @@ public class Inventario {
             col++;
             if (col >= COLS) { col = 0; grid.row(); }
         }
+    }
+
+    // Fuerza equip/desequip inmediato para evitar depender de 'clicked'
+    private void procesarEquip(ClothingItem ci) {
+        Item equippedItem = jugador.getEquipped().get(ci.getSlot());
+        if (equippedItem == null || !equippedItem.getId().equals(ci.getId())) {
+            Gdx.app.log("INV", "Intentando equipar " + ci.getId());
+            boolean success = jugador.equipClothing(ci);
+            if (success) {
+                Gdx.app.log("INV", "Equipado exitosamente " + ci.getId());
+            } else {
+                Gdx.app.error("INV", "Falló equipar " + ci.getId());
+            }
+        } else {
+            Gdx.app.log("INV", "Desequipando " + ci.getId());
+            jugador.unequipClothing(ci.getSlot());
+        }
+        actualizarSlots();  // Refrescar UI
     }
 
     private ImageButton buildItemButton(ClothingItem ci) {

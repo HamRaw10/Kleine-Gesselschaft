@@ -636,6 +636,7 @@ public class PantallaJuego extends ScreenAdapter {
             EquipamentSlot.TORSO, "Ropa/Remeras", "remera_boca", 1));
         j.getMochila().add(new ClothingItem("remera-river", "Remera River",
             EquipamentSlot.TORSO, "Ropa/Remeras", "remera_river", 1));
-        Gdx.app.log("SEED", "Mochila poblada con " + j.getMochila().size() + " ítems.");
+        j.equiparPrimeraRopaDisponible(); // usa la ropa de la mochila en vez de hardcodear
+        Gdx.app.log("SEED", "Mochila poblada con " + j.getMochila().count() + " ítems.");
     }
 }

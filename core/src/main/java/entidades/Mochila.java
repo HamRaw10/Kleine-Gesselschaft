@@ -19,6 +19,8 @@ public class Mochila {
 
     public List<Item> getItems(){ return items; }
 
+    public int count() { return items.size(); }
+
     public String size() {
         if (items.size() == 0) return "Vacia";
         else {
