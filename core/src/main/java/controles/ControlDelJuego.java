@@ -26,6 +26,10 @@ public class ControlDelJuego {
     public ControlDelJuego(Colisiones colisiones) {
         this.colisiones = colisiones;
         this.jugador = new Jugador(colisiones);
+        try {
+            jugador.getDinero().setCantidad(50);
+            jugador.getMochila().getItems().clear(); // sin ropa inicial
+        } catch (Exception ignored) {}
         this.mapa = new Mapa();
 
         this.destinoX = jugador.getPersonajeX();

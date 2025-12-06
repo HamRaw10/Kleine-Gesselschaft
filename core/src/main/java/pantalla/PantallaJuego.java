@@ -25,6 +25,11 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 
 import java.util.Iterator;
 import java.lang.reflect.Method;
@@ -38,6 +43,7 @@ import utilidades.Inventario;
 import utilidades.Portal;
 import utilidades.Render;
 import utilidades.DebugOverlay;
+import utilidades.Tienda;
 import utilidades.items.ClothingItem; // *** NUEVO (para seed de ropa)
 
 public class PantallaJuego extends ScreenAdapter {
@@ -55,6 +61,7 @@ public class PantallaJuego extends ScreenAdapter {
 
     private final Array<Portal> portales = new Array<>();
     private static final String MAPA_INICIAL = "exteriores/compras.tmx";
+    private final Array<Rectangle> zonasTienda = new Array<>();
 
     private Jugador jugador;
     private ControlDelJuego manejo;
@@ -67,6 +74,9 @@ public class PantallaJuego extends ScreenAdapter {
     private Skin skinUI;
     private boolean dineroInicializado = false;
     private Stage stageInventario; // Stage propio del inventario
+    private Tienda tiendaHippie;
+    private boolean tiendaAbierta = false;
+    private Dialog dialogoTienda;
 
 
     // Transiciones
@@ -186,6 +196,24 @@ public class PantallaJuego extends ScreenAdapter {
         }
     }
 
+    // ==== Tiendas ====
+    private void cargarTiendasDesdeTiled(TiledMap map) {
+        zonasTienda.clear();
+        if (map == null) return;
+        MapLayer capaTienda = getLayerIgnoreCase(map, "tienda");
+        if (capaTienda == null) return;
+        for (MapObject obj : capaTienda.getObjects()) {
+            if (obj instanceof RectangleMapObject) {
+                Rectangle r = ((RectangleMapObject) obj).getRectangle();
+                zonasTienda.add(new Rectangle(r));
+            }
+        }
+    }
+
+    private boolean esMapaHippieHouse() {
+        return mapaActualPath != null && mapaActualPath.toLowerCase().contains("hippie_house");
+    }
+
     private float parseOr(float def, String s) { try { return Float.parseFloat(s); } catch (Exception e) { return def; } }
 
     // ==== Carga de mapas ====
@@ -217,6 +245,8 @@ public class PantallaJuego extends ScreenAdapter {
         if (colisiones == null) colisiones = new Colisiones();
         colisiones.cargarDesdeMapa(mapaTiled, "colisiones", UNIT_SCALE);
         cargarPortalesDesdeTiled(mapaTiled);
+        cargarTiendasDesdeTiled(mapaTiled);
+        cerrarTienda(); // por si había una abierta en otro mapa
 
         float worldW = MAP_WIDTH * TILE_SIZE_W * UNIT_SCALE;
         float worldH = MAP_HEIGHT * TILE_SIZE_H * UNIT_SCALE;
@@ -256,11 +286,7 @@ public class PantallaJuego extends ScreenAdapter {
         if (jugador != null && skinUI != null) {
             chat = new Chat(skinUI, jugador);
             inventario = new Inventario(stageInventario, skinUI, jugador); // ← firma correcta
-        }
-
-        // === ROPA INICIAL ===
-        if (jugador != null) {
-            seedRopaBasica(jugador);
+            tiendaHippie = Tienda.crearTiendaHippie();
         }
 
         // === HUD (Monedas) ===
@@ -268,6 +294,7 @@ public class PantallaJuego extends ScreenAdapter {
             lblMonedas = new Label("Monedas: 0", skinUI);
             lblMonedas.setPosition(10, Gdx.graphics.getHeight() - 30);
             hud.addActor(lblMonedas);
+            if (jugador != null) lblMonedas.setText("Monedas: " + jugador.getDinero().getCantidad());
         }
 
         // === Música de fondo ===
@@ -400,6 +427,81 @@ public class PantallaJuego extends ScreenAdapter {
         }
     }
 
+    private void procesarClickTiendasSiCorresponde() {
+        if (tiendaAbierta) return;
+        if (!esMapaHippieHouse()) return;
+        if (zonasTienda.size == 0) return;
+        if ((chat != null && chat.isChatVisible()) || (inventario != null && inventario.isVisible())) return;
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            Vector3 s = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0f);
+            screenViewport.unproject(s);
+            for (Rectangle r : zonasTienda) {
+                if (r.contains(s.x, s.y)) {
+                    abrirTienda();
+                    return;
+                }
+            }
+        }
+    }
+
+    private void abrirTienda() {
+        if (tiendaHippie == null || jugador == null || skinUI == null || stageInventario == null) return;
+        dialogoTienda = construirDialogoTienda();
+        dialogoTienda.show(stageInventario);
+        tiendaAbierta = true;
+        if (jugador != null) jugador.setBloqueado(true);
+        Gdx.input.setInputProcessor(stageInventario);
+    }
+
+    private void cerrarTienda() {
+        if (dialogoTienda != null) {
+            dialogoTienda.remove();
+            dialogoTienda = null;
+        }
+        if (tiendaAbierta && jugador != null && !inventarioAbierto && transitionState == TransitionState.NONE) {
+            jugador.setBloqueado(false);
+        }
+        tiendaAbierta = false;
+    }
+
+    private Dialog construirDialogoTienda() {
+        Dialog dlg = new Dialog("tienda hippie", skinUI);
+        Table tabla = new Table(skinUI);
+        for (final Tienda.Oferta o : tiendaHippie.getOfertas()) {
+            final boolean yaTiene = tiendaHippie.yaPosee(jugador, o.getId());
+            Label lbl = new Label(o.getNombreMinuscula() + " - " + o.getPrecio() + " monedas", skinUI);
+            final TextButton btn = new TextButton(yaTiene ? "en inventario" : "comprar", skinUI);
+            if (yaTiene || jugador.getDinero().getCantidad() < o.getPrecio()) {
+                btn.setDisabled(true);
+            }
+            btn.addListener(new ClickListener() {
+                @Override public void clicked(InputEvent event, float x, float y) {
+                    if (btn.isDisabled()) return;
+                    boolean ok = tiendaHippie.comprar(jugador, o);
+                    if (ok) {
+                        btn.setText("comprado");
+                        btn.setDisabled(true);
+                        if (inventario != null) inventario.actualizarSlots();
+                    } else {
+                        btn.setDisabled(true);
+                    }
+                }
+            });
+            tabla.add(lbl).left().pad(6f);
+            tabla.add(btn).pad(6f);
+            tabla.row();
+        }
+        dlg.getContentTable().add(tabla).pad(10f);
+        TextButton cerrar = new TextButton("cerrar", skinUI);
+        cerrar.addListener(new ClickListener(){
+            @Override public void clicked(InputEvent event, float x, float y) { cerrarTienda(); }
+        });
+        dlg.getButtonTable().add(cerrar).pad(6f);
+        dlg.setMovable(false);
+        dlg.setModal(true);
+        return dlg;
+    }
+
     // ==== INVENTARIO: helpers ====
     private void abrirInventario() {
         if (inventario == null) return;
@@ -460,8 +562,7 @@ public class PantallaJuego extends ScreenAdapter {
             if (jugador != null && chat == null && skinUI != null) {
                 chat = new Chat(skinUI, jugador);
                 inventario = new Inventario(stageInventario, skinUI, jugador);
-                // al crearse “tarde”, aseguramos seed
-                seedRopaBasica(jugador);
+                tiendaHippie = Tienda.crearTiendaHippie();
             }
         }
         if (jugador != null && !spawnInicialHecho && mapaTiled != null) {
@@ -520,11 +621,17 @@ public class PantallaJuego extends ScreenAdapter {
 
         // UI: chat & inventario (tu flujo original)
         if (chat != null) { chat.actualizar(delta); chat.render(); }
-        if (inventario != null) { inventario.actualizar(delta); inventario.render(); }
+        boolean inventarioVisible = inventario != null && inventario.isVisible();
+        if (inventarioVisible) { inventario.actualizar(delta); inventario.render(); }
+        else if (tiendaAbierta && stageInventario != null) {
+            stageInventario.act(delta);
+            stageInventario.draw();
+        }
 
         // Input processors (tu flujo original)
         if (chat != null && chat.isChatVisible()) chat.setInputProcessor();
         else if (inventario != null && inventario.isVisible()) Gdx.input.setInputProcessor(stageInventario);
+        else if (tiendaAbierta && stageInventario != null) Gdx.input.setInputProcessor(stageInventario);
         else Gdx.input.setInputProcessor(manejo.getInputProcessor());
 
 
@@ -535,7 +642,10 @@ public class PantallaJuego extends ScreenAdapter {
         debugOverlay.pollToggleKey();
         debugOverlay.render(shape, Render.batch, jugador, colisiones, camara, uiCamera, TILE_SIZE_W, TILE_SIZE_H, mapaActualPath);
 
-        if (transitionState == TransitionState.NONE) procesarClickPortalesSiCorresponde();
+        if (transitionState == TransitionState.NONE) {
+            procesarClickPortalesSiCorresponde();
+            procesarClickTiendasSiCorresponde();
+        }
 
         if (fadeAlpha > 0f) {
             Gdx.gl.glEnable(GL20.GL_BLEND);

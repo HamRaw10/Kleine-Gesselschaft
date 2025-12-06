@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="15" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="33">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="15" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="9" nextobjectid="37">
  <tileset firstgid="1" source="../tsx/interior.tsx"/>
+ <tileset firstgid="9036" source="../tsx/PIPO_KennyLike_AZ_013.tsx"/>
  <layer id="1" name="Tile Layer 1" width="15" height="15">
   <data encoding="csv">
 8069,8069,8069,8069,8069,8069,8069,8069,8069,8069,8069,8347,8347,8347,8347,
@@ -65,7 +66,7 @@
 8067,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 8067,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 8067,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-8067,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+8067,0,0,0,0,9036,0,0,0,0,0,0,0,0,0,
 8067,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 8067,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 8067,0,0,0,0,0,0,0,0,8202,0,0,0,0,8203,
@@ -77,6 +78,9 @@
 8067,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
+ <objectgroup id="8" name="tienda" visible="0">
+  <object id="35" x="80.1818" y="79.8182" width="16" height="16"/>
+ </objectgroup>
  <objectgroup id="5" name="colisiones">
   <object id="2" x="144" y="128" width="96" height="32"/>
   <object id="3" x="160" y="144" width="64" height="32"/>
@@ -93,6 +97,7 @@
   <object id="29" x="0" y="0" height="240"/>
   <object id="30" x="0" y="240" width="240"/>
   <object id="31" x="0" y="0" width="240"/>
+  <object id="36" x="79.6364" y="79.4545" width="16.5455" height="16.1818"/>
  </objectgroup>
  <objectgroup id="7" name="interacciones">
   <object id="1" x="176" y="224" width="48" height="16">
