@@ -44,6 +44,7 @@ import utilidades.Portal;
 import utilidades.Render;
 import utilidades.DebugOverlay;
 import utilidades.Tienda;
+import utilidades.MenuMinijuegos;
 import utilidades.items.ClothingItem; // *** NUEVO (para seed de ropa)
 
 public class PantallaJuego extends ScreenAdapter {
@@ -62,6 +63,7 @@ public class PantallaJuego extends ScreenAdapter {
     private final Array<Portal> portales = new Array<>();
     private static final String MAPA_INICIAL = "exteriores/compras.tmx";
     private final Array<Rectangle> zonasTienda = new Array<>();
+    private final Array<Rectangle> zonasMinijuegos = new Array<>();
 
     private Jugador jugador;
     private ControlDelJuego manejo;
@@ -77,6 +79,9 @@ public class PantallaJuego extends ScreenAdapter {
     private Tienda tiendaHippie;
     private boolean tiendaAbierta = false;
     private Dialog dialogoTienda;
+    private MenuMinijuegos menuMinijuegos;
+    private boolean menuMinijuegosAbierto = false;
+    private ScreenAdapter minijuegoActivo;
 
 
     // Transiciones
@@ -210,6 +215,19 @@ public class PantallaJuego extends ScreenAdapter {
         }
     }
 
+    private void cargarMinijuegosDesdeTiled(TiledMap map) {
+        zonasMinijuegos.clear();
+        if (map == null) return;
+        MapLayer capa = getLayerIgnoreCase(map, "minijuegos");
+        if (capa == null) return;
+        for (MapObject obj : capa.getObjects()) {
+            if (obj instanceof RectangleMapObject) {
+                Rectangle r = ((RectangleMapObject) obj).getRectangle();
+                zonasMinijuegos.add(new Rectangle(r));
+            }
+        }
+    }
+
     private boolean esMapaHippieHouse() {
         return mapaActualPath != null && mapaActualPath.toLowerCase().contains("hippie_house");
     }
@@ -246,6 +264,7 @@ public class PantallaJuego extends ScreenAdapter {
         colisiones.cargarDesdeMapa(mapaTiled, "colisiones", UNIT_SCALE);
         cargarPortalesDesdeTiled(mapaTiled);
         cargarTiendasDesdeTiled(mapaTiled);
+        cargarMinijuegosDesdeTiled(mapaTiled);
         cerrarTienda(); // por si había una abierta en otro mapa
 
         float worldW = MAP_WIDTH * TILE_SIZE_W * UNIT_SCALE;
@@ -287,6 +306,16 @@ public class PantallaJuego extends ScreenAdapter {
             chat = new Chat(skinUI, jugador);
             inventario = new Inventario(stageInventario, skinUI, jugador); // ← firma correcta
             tiendaHippie = Tienda.crearTiendaHippie();
+        }
+
+        if (skinUI != null) {
+            menuMinijuegos = new MenuMinijuegos(skinUI, new MenuMinijuegos.SeleccionListener() {
+                @Override public void onElegir(MenuMinijuegos.Opcion opcion) {
+                    cerrarMenuMinijuegos();
+                    lanzarMinijuego(opcion);
+                }
+                @Override public void onCerrar() { cerrarMenuMinijuegos(); }
+            });
         }
 
         // === HUD (Monedas) ===
@@ -415,6 +444,7 @@ public class PantallaJuego extends ScreenAdapter {
     // ==== Input de portales ====
     private void procesarClickPortalesSiCorresponde() {
         if ((chat != null && chat.isChatVisible()) || (inventario != null && inventario.isVisible())) return;
+        if (menuMinijuegosAbierto || minijuegoActivo != null || tiendaAbierta) return;
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             Vector3 s = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0f);
             screenViewport.unproject(s);
@@ -428,7 +458,7 @@ public class PantallaJuego extends ScreenAdapter {
     }
 
     private void procesarClickTiendasSiCorresponde() {
-        if (tiendaAbierta) return;
+        if (tiendaAbierta || menuMinijuegosAbierto || minijuegoActivo != null) return;
         if (!esMapaHippieHouse()) return;
         if (zonasTienda.size == 0) return;
         if ((chat != null && chat.isChatVisible()) || (inventario != null && inventario.isVisible())) return;
@@ -438,6 +468,22 @@ public class PantallaJuego extends ScreenAdapter {
             for (Rectangle r : zonasTienda) {
                 if (r.contains(s.x, s.y)) {
                     abrirTienda();
+                    return;
+                }
+            }
+        }
+    }
+
+    private void procesarClickMinijuegosSiCorresponde() {
+        if (menuMinijuegosAbierto || minijuegoActivo != null) return;
+        if (zonasMinijuegos.size == 0) return;
+        if ((chat != null && chat.isChatVisible()) || (inventario != null && inventario.isVisible()) || tiendaAbierta) return;
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            Vector3 s = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0f);
+            screenViewport.unproject(s);
+            for (Rectangle r : zonasMinijuegos) {
+                if (r.contains(s.x, s.y)) {
+                    abrirMenuMinijuegos();
                     return;
                 }
             }
@@ -502,6 +548,53 @@ public class PantallaJuego extends ScreenAdapter {
         return dlg;
     }
 
+    private void abrirMenuMinijuegos() {
+        if (menuMinijuegos == null || menuMinijuegosAbierto) return;
+        menuMinijuegos.mostrar();
+        menuMinijuegosAbierto = true;
+        if (jugador != null) jugador.setBloqueado(true);
+        if (manejo != null) manejo.cancelarMovimiento();
+    }
+
+    private void cerrarMenuMinijuegos() {
+        if (!menuMinijuegosAbierto) return;
+        menuMinijuegosAbierto = false;
+        if (menuMinijuegos != null) menuMinijuegos.ocultar();
+        if (jugador != null && transitionState == TransitionState.NONE && minijuegoActivo == null && !inventarioAbierto && !tiendaAbierta) {
+            jugador.setBloqueado(false);
+        }
+    }
+
+    private void lanzarMinijuego(MenuMinijuegos.Opcion opcion) {
+        if (jugador == null || skinUI == null || minijuegoActivo != null) return;
+        MenuMinijuegos.MinijuegoFinListener fin = this::terminarMinijuego;
+        switch (opcion) {
+            case CARA_O_CRUZ:
+                minijuegoActivo = new MinijuegoCaraCruz(jugador, skinUI, fin);
+                break;
+            case CRAPS:
+                minijuegoActivo = new MinijuegoCraps(jugador, skinUI, fin);
+                break;
+            default:
+                break;
+        }
+        if (minijuegoActivo != null && jugador != null) jugador.setBloqueado(true);
+    }
+
+    private void terminarMinijuego(int puntosGanados) {
+        if (minijuegoActivo != null) {
+            try { minijuegoActivo.dispose(); } catch (Exception ignored) {}
+            minijuegoActivo = null;
+        }
+        if (jugador != null && puntosGanados > 0) {
+            jugador.ganarMonedas(puntosGanados); // 1:1 puntos -> monedas
+            Gdx.app.log("MINIJUEGO", "Puntos: " + puntosGanados + " => Monedas +" + puntosGanados);
+        }
+        if (jugador != null && transitionState == TransitionState.NONE && !menuMinijuegosAbierto && !inventarioAbierto && !tiendaAbierta) {
+            jugador.setBloqueado(false);
+        }
+    }
+
     // ==== INVENTARIO: helpers ====
     private void abrirInventario() {
         if (inventario == null) return;
@@ -530,6 +623,11 @@ public class PantallaJuego extends ScreenAdapter {
     @Override public void render(float delta) {
         Gdx.gl.glClearColor(0,0,0,1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        if (minijuegoActivo != null) {
+            minijuegoActivo.render(delta);
+            return;
+        }
 
         switch (transitionState) {
             case FADING_OUT:
@@ -631,6 +729,7 @@ public class PantallaJuego extends ScreenAdapter {
         // Input processors (tu flujo original)
         if (chat != null && chat.isChatVisible()) chat.setInputProcessor();
         else if (inventario != null && inventario.isVisible()) Gdx.input.setInputProcessor(stageInventario);
+        else if (menuMinijuegosAbierto && menuMinijuegos != null) Gdx.input.setInputProcessor(menuMinijuegos.getStage());
         else if (tiendaAbierta && stageInventario != null) Gdx.input.setInputProcessor(stageInventario);
         else Gdx.input.setInputProcessor(manejo.getInputProcessor());
 
@@ -638,6 +737,9 @@ public class PantallaJuego extends ScreenAdapter {
         // Monedas HUD
         if (jugador != null && lblMonedas != null) lblMonedas.setText("Monedas: " + jugador.getDinero().getCantidad());
         if (hud != null) { hud.act(delta); hud.draw(); }
+        if (menuMinijuegosAbierto && menuMinijuegos != null) {
+            menuMinijuegos.render(delta);
+        }
 
         debugOverlay.pollToggleKey();
         debugOverlay.render(shape, Render.batch, jugador, colisiones, camara, uiCamera, TILE_SIZE_W, TILE_SIZE_H, mapaActualPath);
@@ -645,6 +747,7 @@ public class PantallaJuego extends ScreenAdapter {
         if (transitionState == TransitionState.NONE) {
             procesarClickPortalesSiCorresponde();
             procesarClickTiendasSiCorresponde();
+            procesarClickMinijuegosSiCorresponde();
         }
 
         if (fadeAlpha > 0f) {
@@ -690,7 +793,9 @@ public class PantallaJuego extends ScreenAdapter {
 
         if (chat != null) chat.resize(width, height);
         if (inventario != null) inventario.resize(width, height);
+        if (menuMinijuegos != null) menuMinijuegos.resize(width, height);
         if (hud != null) hud.getViewport().update(width, height, true);
+        if (minijuegoActivo != null) minijuegoActivo.resize(width, height);
     }
 
     @Override public void dispose() {
@@ -703,6 +808,8 @@ public class PantallaJuego extends ScreenAdapter {
         if (shape != null) shape.dispose();
         if (hud != null) hud.dispose();
         if (debugOverlay != null) debugOverlay.dispose();
+        if (menuMinijuegos != null) menuMinijuegos.dispose();
+        if (minijuegoActivo != null) minijuegoActivo.dispose();
     }
 
     private String areaActual = null;
