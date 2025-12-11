@@ -91,6 +91,7 @@ public class PantallaJuego extends ScreenAdapter {
     private String pendingMap = null;
     private float pendingSpawnX = 0f, pendingSpawnY = 0f;
     private String pendingTrans = "none";
+    private boolean pendingSpawnCustom = false;
 
     private ShapeRenderer shape;
     private boolean spawnInicialHecho = false;
@@ -142,6 +143,10 @@ public class PantallaJuego extends ScreenAdapter {
         return null;
     }
 
+    private boolean esMapaExterior(String path) {
+        return path != null && path.toLowerCase().contains("exteriores/");
+    }
+
     private String getPropStr(MapObject obj, String... keys) {
         for (String k : keys) {
             Object v = obj.getProperties().get(k);
@@ -191,8 +196,11 @@ public class PantallaJuego extends ScreenAdapter {
 
             String sx = getPropStr(obj, "spawnX","spawnx","spawn_x");
             String sy = getPropStr(obj, "spawnY","spawny","spawn_y");
+            // Siempre consideramos el spawn como custom si hay valores en el portal,
+            // aunque falte alguno (usamos el centro del rect como fallback para ese eje).
             p.spawnX = (sx != null) ? parseOr(r.x + r.width * 0.5f, sx) : (r.x + r.width * 0.5f);
             p.spawnY = (sy != null) ? parseOr(r.y + r.height * 0.5f, sy) : (r.y + r.height * 0.5f);
+            p.hasCustomSpawn = true;
 
             String tr = getPropStr(obj, "transicion","transition");
             p.transicion = (tr != null) ? tr : "none";
@@ -303,7 +311,7 @@ public class PantallaJuego extends ScreenAdapter {
 
         // Chat e Inventario
         if (jugador != null && skinUI != null) {
-            chat = new Chat(skinUI, jugador);
+            chat = new Chat(skinUI, jugador, camara);
             inventario = new Inventario(stageInventario, skinUI, jugador); // ← firma correcta
             tiendaHippie = Tienda.crearTiendaHippie();
         }
@@ -357,6 +365,26 @@ public class PantallaJuego extends ScreenAdapter {
         float y = cy - h * 0.5f;
         return colisiones != null && colisiones.colisionaAABB(x, y, w, h);
     }
+
+    // Busca un punto libre cercano al centro dado, sin irse lejos del portal.
+    private Vector2 buscarSpawnSeguroCercano(float cx, float cy, float maxRadio) {
+        if (!colisionaJugadorCentradoEn(cx, cy)) return new Vector2(cx, cy);
+
+        Vector2 offset = new Vector2(1, 0);
+        int pasos = 24;
+        float pasoRadio = Math.max(8f, TILE_SIZE_W * 0.25f);
+        for (float radio = Math.max(8f, TILE_SIZE_W * 0.5f);
+             radio <= Math.max(maxRadio, TILE_SIZE_W * 2f);
+             radio += pasoRadio) {
+            for (int i = 0; i < pasos; i++) {
+                offset.setLength(radio).setAngleDeg(i * (360f / pasos));
+                float px = cx + offset.x;
+                float py = cy + offset.y;
+                if (!colisionaJugadorCentradoEn(px, py)) return new Vector2(px, py);
+            }
+        }
+        return new Vector2(cx, cy); // fallback: sin posición libre cercana
+    }
     private Vector2 buscarSpawnSeguro(Vector2 centro) {
         if (!colisionaJugadorCentradoEn(centro.x, centro.y)) return new Vector2(centro);
         Vector2 offset = new Vector2(1, 0);
@@ -372,8 +400,16 @@ public class PantallaJuego extends ScreenAdapter {
     }
 
     // ==== Transiciones ====
-    private void prepararTransicionMapa(String target, float sx, float sy, String tr) {
-        pendingMap = target; pendingSpawnX = sx; pendingSpawnY = sy;
+    private void prepararTransicionMapa(String target, float sx, float sy, String tr, boolean customSpawn) {
+        // Si no se especifica targetMap en Tiled, interpretamos que es el mismo mapa actual
+        String effectiveTarget = (target == null || target.isEmpty()) ? mapaActualPath : target;
+
+        // Para destinos exteriores, forzar Y a un rango seguro (200-220)
+        if (esMapaExterior(effectiveTarget)) {
+            sy = MathUtils.clamp(sy, 200f, 240f);
+        }
+
+        pendingMap = effectiveTarget; pendingSpawnX = sx; pendingSpawnY = sy; pendingSpawnCustom = customSpawn;
         pendingTrans = (tr != null) ? tr : "none";
         transitionState = TransitionState.FADING_OUT;
         if (jugador != null) jugador.setBloqueado(true);
@@ -385,7 +421,7 @@ public class PantallaJuego extends ScreenAdapter {
         String canon = canonicalizarDestino(pendingMap);
         if (!existeMapa(canon)) { Gdx.app.error("PORTAL","Destino inexistente: "+canon); transitionState = TransitionState.FADING_IN; return; }
         if (mapaActualPath != null && mapaActualPath.equals(canon)) {
-            reubicarEnMapaActual(pendingSpawnX, pendingSpawnY);
+            reubicarEnMapaActual(pendingSpawnX, pendingSpawnY, !pendingSpawnCustom, pendingSpawnCustom);
             transitionState = TransitionState.FADING_IN; return;
         }
 
@@ -401,28 +437,48 @@ public class PantallaJuego extends ScreenAdapter {
             canon.toLowerCase().contains("pub") ||
             canon.toLowerCase().contains("supermercado");
 
-        Vector2 libre = buscarSpawnSeguro(new Vector2(pendingSpawnX, pendingSpawnY));
-        float spawnX = libre.x, spawnY = libre.y;
-
-        clampSnapYAplicarSpawn(spawnX, spawnY);
+        float spawnX = pendingSpawnX;
+        float spawnY = pendingSpawnY;
+        if (pendingSpawnCustom) {
+            Vector2 seguro = buscarSpawnSeguroCercano(spawnX, spawnY, Math.max(TILE_SIZE_W * 2f, 48f));
+            spawnX = seguro.x; spawnY = seguro.y;
+            clampSnapYAplicarSpawn(spawnX, spawnY, false); // no snap a grilla para custom
+            if (jugador != null) jugador.cancelarMovimiento();
+            try { manejo.cancelarMovimiento(); manejo.setDestino(spawnX, spawnY, false); } catch (Exception ignored) {}
+        } else {
+            Vector2 libre = buscarSpawnSeguro(new Vector2(pendingSpawnX, pendingSpawnY));
+            spawnX = libre.x; spawnY = libre.y;
+            clampSnapYAplicarSpawn(spawnX, spawnY, true);
+            if (jugador != null) jugador.cancelarMovimiento();
+            try { manejo.cancelarMovimiento(); manejo.setDestino(spawnX, spawnY, false); } catch (Exception ignored) {}
+        }
 
         if (jugador != null) {
             jugador.setEscala(esInterior ? 0.7f : 1f);
-            jugador.cancelarMovimiento();
         }
-        try { manejo.cancelarMovimiento(); manejo.setDestino(spawnX, spawnY, false); } catch (Exception ignored) {}
+
+        spawnInicialHecho = true; // evitar re-ubicación automática al centro en el siguiente render
 
         transitionState = TransitionState.FADING_IN;
     }
 
-    private void reubicarEnMapaActual(float sx, float sy) {
-        Vector2 libre = buscarSpawnSeguro(new Vector2(sx, sy));
-        clampSnapYAplicarSpawn(libre.x, libre.y);
+    private void reubicarEnMapaActual(float sx, float sy, boolean snapToGrid, boolean customSpawn) {
+        float px = sx, py = sy;
+        if (customSpawn) {
+            Vector2 seguro = buscarSpawnSeguroCercano(px, py, Math.max(TILE_SIZE_W * 2f, 48f));
+            px = seguro.x; py = seguro.y;
+            clampSnapYAplicarSpawn(px, py, false); // no snap en custom
+        } else {
+            Vector2 libre = buscarSpawnSeguro(new Vector2(sx, sy));
+            px = libre.x; py = libre.y;
+            clampSnapYAplicarSpawn(px, py, snapToGrid);
+        }
         if (jugador != null) jugador.cancelarMovimiento();
-        try { manejo.cancelarMovimiento(); manejo.setDestino(libre.x, libre.y, false); } catch (Exception ignored) {}
+        try { manejo.cancelarMovimiento(); manejo.setDestino(px, py, false); } catch (Exception ignored) {}
+        spawnInicialHecho = true; // ya fijamos spawn manualmente
     }
 
-    private void clampSnapYAplicarSpawn(float x, float y) {
+    private void clampSnapYAplicarSpawn(float x, float y, boolean snapToGrid) {
         float worldW = MAP_WIDTH * TILE_SIZE_W * UNIT_SCALE;
         float worldH = MAP_HEIGHT * TILE_SIZE_H * UNIT_SCALE;
 
@@ -433,8 +489,10 @@ public class PantallaJuego extends ScreenAdapter {
         float sx = MathUtils.clamp(x, halfW + margen, Math.max(halfW, worldW - halfW - margen));
         float sy = MathUtils.clamp(y, halfH + margen, Math.max(halfH, worldH - halfH - margen));
 
-        if (TILE_SIZE_W > 0) sx = Math.round(sx / TILE_SIZE_W) * TILE_SIZE_W;
-        if (TILE_SIZE_H > 0) sy = Math.round(sy / TILE_SIZE_H) * TILE_SIZE_H;
+        if (snapToGrid) {
+            if (TILE_SIZE_W > 0) sx = Math.round(sx / TILE_SIZE_W) * TILE_SIZE_W;
+            if (TILE_SIZE_H > 0) sy = Math.round(sy / TILE_SIZE_H) * TILE_SIZE_H;
+        }
 
         if (jugador != null) jugador.setPos(sx, sy);
         camara.position.set(sx, sy, 0f);
@@ -450,7 +508,7 @@ public class PantallaJuego extends ScreenAdapter {
             screenViewport.unproject(s);
             for (Portal p : portales) {
                 if (p.rect.contains(s.x, s.y)) {
-                    prepararTransicionMapa(p.targetMap, p.spawnX, p.spawnY, p.transicion);
+                    prepararTransicionMapa(p.targetMap, p.spawnX, p.spawnY, p.transicion, p.hasCustomSpawn);
                     return;
                 }
             }
@@ -646,7 +704,7 @@ public class PantallaJuego extends ScreenAdapter {
             float worldW = MAP_WIDTH * TILE_SIZE_W * UNIT_SCALE;
             float worldH = MAP_HEIGHT * TILE_SIZE_H * UNIT_SCALE;
             Vector2 libre = buscarSpawnSeguro(new Vector2(worldW * 0.5f, worldH * 0.5f));
-            clampSnapYAplicarSpawn(libre.x, libre.y);
+            clampSnapYAplicarSpawn(libre.x, libre.y, true);
             if (jugador != null) jugador.cancelarMovimiento();
             try { manejo.cancelarMovimiento(); manejo.setDestino(libre.x, libre.y, false); } catch (Exception ignored) {}
             spawnInicialHecho = true;
@@ -658,7 +716,7 @@ public class PantallaJuego extends ScreenAdapter {
         if (jugador == null) {
             jugador = manejo.getJugador();
             if (jugador != null && chat == null && skinUI != null) {
-                chat = new Chat(skinUI, jugador);
+                chat = new Chat(skinUI, jugador, camara);
                 inventario = new Inventario(stageInventario, skinUI, jugador);
                 tiendaHippie = Tienda.crearTiendaHippie();
             }
@@ -667,7 +725,7 @@ public class PantallaJuego extends ScreenAdapter {
             float worldW = MAP_WIDTH * TILE_SIZE_W * UNIT_SCALE;
             float worldH = MAP_HEIGHT * TILE_SIZE_H * UNIT_SCALE;
             Vector2 libre = buscarSpawnSeguro(new Vector2(worldW * 0.5f, worldH * 0.5f));
-            clampSnapYAplicarSpawn(libre.x, libre.y);
+            clampSnapYAplicarSpawn(libre.x, libre.y, true);
             if (jugador != null) jugador.cancelarMovimiento();
             try { manejo.cancelarMovimiento(); manejo.setDestino(libre.x, libre.y, false); } catch (Exception ignored) {}
             spawnInicialHecho = true;
@@ -830,7 +888,7 @@ public class PantallaJuego extends ScreenAdapter {
         notificarControlColisionesActualizadas();
 
         Vector2 libre = buscarSpawnSeguro(new Vector2(spawnX, spawnY));
-        clampSnapYAplicarSpawn(libre.x, libre.y);
+        clampSnapYAplicarSpawn(libre.x, libre.y, true);
         if (jugador != null) jugador.cancelarMovimiento();
         try { manejo.cancelarMovimiento(); manejo.setDestino(libre.x, libre.y, false); } catch (Exception ignored) {}
     }

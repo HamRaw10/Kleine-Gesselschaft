@@ -80,6 +80,13 @@
   <object id="28" x="176" y="240" width="48"/>
  </objectgroup>
  <objectgroup id="5" name="interaccion">
+  <properties>
+   <property name="spawnX" type="float" value="160"/>
+   <property name="spawnY" type="float" value="64"/>
+   <property name="targetMap" value="exteriores/entretenimiento.tmx"/>
+   <property name="tipo" value="portal"/>
+   <property name="transicion" value="fade"/>
+  </properties>
   <object id="1" x="128" y="224" width="48" height="16">
    <properties>
     <property name="spawnX" type="float" value="160"/>
